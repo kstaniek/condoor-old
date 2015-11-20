@@ -38,6 +38,13 @@ from condoor.utils import delegate
 
 from condoor.exceptions import ConnectionError, ConnectionTimeoutError
 
+"""
+This is a python module providing access to Cisco devices over Telnet and SSH.
+
+"""
+
+__version__ = '0.0.1'
+
 __all__ = ['make_connection_from_urls', 'Connection']
 
 supported_platforms = {
@@ -92,12 +99,7 @@ drivers = {
 }
 
 
-def make_connection_from_urls(
-        name,
-        urls,
-        platform='generic',
-        account_manager=None,
-        logger=None):
+def make_connection_from_urls(name, urls, platform='generic', account_manager=None, logger=None):
     if logger is None:
         logger = logging.getLogger(name)
         logger.addHandler(logging.NullHandler())
@@ -114,12 +116,7 @@ def make_connection_from_urls(
     for url in urls:
         nodes.append(make_hop_info_from_url(url))
 
-    return driver_class(
-        name,
-        nodes,
-        Controller,
-        logger,
-        account_manager=account_manager)
+    return driver_class(name, nodes, Controller, logger, account_manager=account_manager)
 
 
 @delegate("_driver", ("reload", "send", "enable", "run_fsm"))

@@ -29,8 +29,6 @@
 
 
 import re
-import logging
-
 import pexpect
 
 from threading import Lock
@@ -68,7 +66,6 @@ prompt_patterns = {
 os_types = ['IOSXR', 'CALVADOS', 'ROMMON', 'IOS']
 
 
-
 def _c(ctx, msg):
     return "[{}]: {}".format(ctx, msg)
 
@@ -91,12 +88,11 @@ class Connection(object):
     shell_prompt = "\$\s?|>\s?|#\s?|\%\s?"
     connection_closed_re = re.compile("Connection closed")
     rommon_prompt = re.compile("rommon.*>")
-    #platform_prompt = re.compile('[\r\n][\r\n]((\w+/\w+/\w+/\w+:.*?)(\([^()]*\))?#|.*?[#|>])')
+    # platform_prompt = re.compile('[\r\n][\r\n]((\w+/\w+/\w+/\w+:.*?)(\([^()]*\))?#|.*?[#|>])')
     platform_prompt = re.compile('[\w\-]+[#|>]')
 
     password_prompt = re.compile("[P|p]assword:\s?")
     username_prompt = re.compile("([U|u]sername:\s|login:\s?)")
-
 
     command_syntax_re = re.compile('\% Bad IP address or host name% Unknown command or computer name, '
                                    'or unable to find computer address|'
@@ -247,8 +243,8 @@ class Connection(object):
                 _c(self.hostname,
                    "Command executed successfully: '{}'".format(cmd)))
             output = self.ctrl.before
-            #if output.startswith(cmd):
-                # remove first line which contains the command itself
+            # if output.startswith(cmd):
+            #    remove first line which contains the command itself
             #    second_line_index = output.find('\n') + 1
             #    output = output[second_line_index:]
             output = output.replace('\r', '')
@@ -285,7 +281,7 @@ class Connection(object):
         """
         self.logger.debug(_c(self.hostname, "Starting XML TTY Agent"))
         result = self.send("netconf", wait_for_string=']]>]]>')
-        #if result != '':
+        # if result != '':
         #    return result
         self.logger.info(_c(self.hostname, "XML TTY Agent started"))
 

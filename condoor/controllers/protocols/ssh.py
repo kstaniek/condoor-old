@@ -27,8 +27,6 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-import logging
-
 from base import *
 import pexpect
 from ..fsm import FSM, action

@@ -47,8 +47,7 @@ def delegate(attribute_name, method_names):
             attribute = "_" + cls.__name__ + attribute
         for name in d['methods']:
             setattr(cls, name, eval("lambda self, *a, **kw: "
-                                    "self.{0}.{1}(*a, **kw)".format(
-                                    attribute, name)))
+                                    "self.{0}.{1}(*a, **kw)".format(attribute, name)))
         return cls
     return decorator
 
@@ -74,10 +73,10 @@ def is_reachable(host, port=23):
     This function check reachability for specified hostname/port
     It tries to open TCP socket.
     It supports IPv6.
-    :param host string: hostname or ip address string
+    :param host: hostname or ip address string
     :rtype: str
-    :param port number: tcp port number
-    :rtype: bool
+    :param port: tcp port number
+    :rtype: number
     :return: True if host is reachable else false
     """
 

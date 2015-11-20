@@ -37,15 +37,20 @@ try:
 except ImportError:
     from distutils.core import setup, Command
 
+import condoor
 
-VERSION = '0.0.1'
 DESCRIPTION = 'This is a python module providing access to Cisco devices over Telnet and SSH'
 with codecs.open('README.rst', 'r', encoding='UTF-8') as readme:
     LONG_DESCRIPTION = ''.join(readme)
 
 CLASSIFIERS = [
+    'Development Status :: 4 - Beta'
     'Programming Language :: Python',
     'Programming Language :: Python :: 2.7',
+    'Intended Audience :: Developers',
+    'Natural Language :: English',
+    'License :: OSI Approved :: Apache Software License',
+    'Operating System :: POSIX :: Linux',
 ]
 
 packages = [
@@ -59,7 +64,7 @@ NAME = 'condoor'
 
 setup(
     name=NAME,
-    version=VERSION,
+    version=condoor.__version__,
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     author='Klaudiusz Staniek',
@@ -68,8 +73,12 @@ setup(
     tests_require=['tox', 'pytest'],
     platforms=['any'],
     packages=packages,
+    package_data={'': ['LICENSE', ], },
+    package_dir={'condoor': 'condoor'},
+    include_package_data=True,
     install_requires=['pexpect>=3.1',
                       'keyring'],
+    license='Apache 2.0',
     classifiers=CLASSIFIERS,
     zip_safe=True
 )

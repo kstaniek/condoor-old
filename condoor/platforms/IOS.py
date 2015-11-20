@@ -31,7 +31,6 @@ import logging
 import re
 
 import generic
-from generic import _c
 from ..exceptions import ConnectionError, ConnectionAuthenticationError
 
 from ..controllers.fsm import FSM, action

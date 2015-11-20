@@ -27,7 +27,6 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-import logging
 import re
 
 import generic
@@ -38,7 +37,6 @@ from ..exceptions import \
     ConnectionAuthenticationError
 
 from ..controllers.fsm import FSM, action
-
 
 
 class Connection(generic.Connection):
@@ -84,13 +82,13 @@ class Connection(generic.Connection):
     def reload(self, rommon_boot_command="boot"):
         """
         RP/0/RSP0/CPU0:ASR9K-PE4#reload
-Tue Nov 10 14:43:11.488 UTC
-Some active software packages are not yet committed. Proceed?[confirm]
-Standby card not present or not Ready for failover. Proceed?[confirm]
-Preparing system for backup. This may take a few minutes especially for large configurations.
-	Status report: node0_RSP0_CPU0: START TO BACKUP
-	Status report: node0_RSP0_CPU0: BACKUP HAS COMPLETED SUCCESSFULLY
-[Done]
+        Tue Nov 10 14:43:11.488 UTC
+        Some active software packages are not yet committed. Proceed?[confirm]
+        Standby card not present or not Ready for failover. Proceed?[confirm]
+        Preparing system for backup. This may take a few minutes especially for large configurations.
+        Status report: node0_RSP0_CPU0: START TO BACKUP
+        Status report: node0_RSP0_CPU0: BACKUP HAS COMPLETED SUCCESSFULLY
+        [Done]
         """
 
         self.rommon_boot_command = rommon_boot_command
@@ -100,7 +98,7 @@ Preparing system for backup. This may take a few minutes especially for large co
         PROCEED = re.compile(re.escape("Proceed with reload? [confirm]"))
         CONFIGURATION_COMPLETED = re.compile("SYSTEM CONFIGURATION COMPLETED")
         CONFIGURATION_IN_PROCESS = re.compile("SYSTEM CONFIGURATION IN PROCESS")
-        #CONSOLE = re.compile("ios con0/RSP0/CPU0 is now available"))
+        # CONSOLE = re.compile("ios con0/RSP0/CPU0 is now available"))
         CONSOLE = re.compile("ios con[0|1]\/RS?P[0-1]\/CPU0 is now available")
         RELOAD_NA = re.compile("Reload to the ROM monitor disallowed from a telnet line")
 
