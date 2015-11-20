@@ -36,7 +36,11 @@ from hopinfo import make_hop_info_from_url
 from controllers.pexpect_ctrl import Controller
 from condoor.utils import delegate
 
-from condoor.exceptions import ConnectionError, ConnectionTimeoutError
+from pexpect import TIMEOUT
+from condoor.controllers.fsm import FSM, action
+
+from condoor.exceptions import CommandTimeoutError, ConnectionError, ConnectionTimeoutError, CommandError, \
+    CommandSyntaxError, ConnectionAuthenticationError, GeneralError, InvalidHopInfoError
 
 """
 This is a python module providing access to Cisco devices over Telnet and SSH.
@@ -45,7 +49,9 @@ This is a python module providing access to Cisco devices over Telnet and SSH.
 
 __version__ = '0.0.1'
 
-__all__ = ['make_connection_from_urls', 'Connection']
+__all__ = ['make_connection_from_urls', 'Connection', 'FSM', 'TIMEOUT', 'action',
+           'CommandTimeoutError', 'ConnectionError', 'ConnectionTimeoutError', 'CommandError',
+           'CommandSyntaxError', 'ConnectionAuthenticationError']
 
 supported_platforms = {
     "ASR-9000": {  # generic
@@ -150,12 +156,13 @@ class Connection(object):
         The *log_dir* parameter contains a string representing the full path to the logging directory.
         The logging directory can store the device session log and the detailed Condoor debug log.
         If there is no *log_dir* specified the current directory is used. The possible logging levels are as follows::
-        NOTSET=0
-        DEBUG=10
-        INFO=20
-        WARN=30
-        ERROR=40
-        CRITICAL=50
+
+            NOTSET=0
+            DEBUG=10
+            INFO=20
+            WARN=30
+            ERROR=40
+            CRITICAL=50
 
         The default is DEBUG. If the *log_level* is set to 0 then no logging file is created.  The *log_session*
         parameters defines whether the device session log is created or not.
@@ -326,7 +333,7 @@ class Connection(object):
 
     def connect(self, logfile=None):
         """This method connects to the device. The discovery method must be called first. If not then
-        :class:`exceptions.ConnectionError` is raised
+        :class:`ConnectionError` is raised
 
         Args:
             logfile (file): Optional file descriptor for session logging. The file must be open for write.
@@ -334,10 +341,10 @@ class Connection(object):
                 It the parameter is not passed then the default *session.log* file is created in `log_dir`.
 
         Raises:
-            exceptions.ConnectionError: If the discovery method was not called first or there was a problem with getting
+            ConnectionError: If the discovery method was not called first or there was a problem with getting
              the connection.
-            exceptions.ConnectionAuthenticationError: If the authentication failed.
-            exceptions.ConnectionTimeoutError: If the connection timeout happened.
+            ConnectionAuthenticationError: If the authentication failed.
+            ConnectionTimeoutError: If the connection timeout happened.
 
         """
 
@@ -361,10 +368,10 @@ class Connection(object):
                 It the parameter is not passed then the default *session.log* file is created in `log_dir`.
 
         Raises:
-            exceptions.ConnectionError: If the discovery method was not called first or there was a problem with getting
+            ConnectionError: If the discovery method was not called first or there was a problem with getting
              the connection.
-            exceptions.ConnectionAuthenticationError: If the authentication failed.
-            exceptions.ConnectionTimeoutError: If the connection timeout happened.
+            ConnectionAuthenticationError: If the authentication failed.
+            ConnectionTimeoutError: If the connection timeout happened.
 
         """
         self._set_default_log_fd(logfile)
@@ -401,6 +408,7 @@ class Connection(object):
 
     @property
     def platform(self):
+        """Returns the string representing hardware platform model. For example: ASR-9010, ASR922, NCS-4006, etc."""
         if self._platform == 'generic':
             self.detect_platform()
         return self._platform
@@ -411,12 +419,14 @@ class Connection(object):
 
     @property
     def family(self):
+        """Returns the string representing hardware platform family. For example: ASR9K, ASR900, NCS6K, etc."""
         if self._family == 'generic':
             self.detect_platform()
         return self._family
 
     @property
     def prompt(self):
+        """Returns the target device prompt if detected or *None*."""
         try:
             return self._driver.prompt
         except AttributeError:
@@ -424,13 +434,16 @@ class Connection(object):
 
     @property
     def os_type(self):
+        """Returns the string representing the Operating System type. For example: IOS, XR, eXR. If not detected returns
+        *None*"""
         try:
             return self._os_type
         except AttributeError:
-            return 'unknown'
+            return None
 
     @property
     def hostname(self):
+        """Returns the string representing the target device hostname"""
         try:
             return self._hostname
         except AttributeError:
@@ -438,6 +451,7 @@ class Connection(object):
 
     @property
     def is_connected(self):
+        """Returns boolean value. *True* if target device is connected, *False* if not connected"""
         try:
             return self._driver.is_connected
         except AttributeError:

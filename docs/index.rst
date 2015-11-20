@@ -1,13 +1,8 @@
 Welcome to Condoor's |version| documentation!
 =============================================
 
-Condoor provides an easy way to connect to Cisco devices over SSH and Telnet.
-
-It supports various software and hardware platforms
-including classic Cisco IOS, IOS XE, IOS XR and IOS eXR.
-
-Condoor is a pure Python module that uses the Pexpect to provide the session
-connectivity to the devices.
+Condoor is a pure Python module that uses the `Pexpect <http://pexpect.readthedocs.org>`_
+module to provide the session connectivity to the devices.
 
 
 Contents:
@@ -16,7 +11,7 @@ Contents:
    :maxdepth: 2
 
    install
-   overwiev
+   overview
    api/index
    examples
    FAQ

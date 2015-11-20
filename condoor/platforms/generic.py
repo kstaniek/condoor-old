@@ -225,6 +225,9 @@ class Connection(object):
 
         Returns:
             A string containing the command output.
+
+        Raises:
+            ConnectionError:
         """
         if self.connected:
             self.logger.debug(
@@ -306,7 +309,8 @@ class Connection(object):
 
     def reload(self):
         """This method reloads the device and waits for device to boot up. It post the informational message to the
-        log if not implemented by device driver"""
+        log if not implemented by device driver."""
+
         self.logger.info("Ignoring. Not implemented for this platform")
 
     def run_fsm(self, name, command, events, transitions, timeout):

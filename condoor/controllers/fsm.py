@@ -51,33 +51,88 @@ def action(func):
 
 
 class FSM(object):
-    """This is class defining the Finite State Machine implementation which can be executed
-    on the :class:`condoor.Connection` object. It helps handing various device response strings and
-    taking appropriate action.
-    """
+    """This class represents Finite State Machine for the current device connection. Here is the
+        example of usage::
+
+            to be done
+
+
+        The example action::
+
+            def send_newline(ctx):
+                ctx.ctrl.sendline()
+                return True
+
+            def error(ctx):
+                ctx.message = "Filesystem error"
+                return False
+
+            def readonly(ctx):
+                ctx.message = "Filesystem is readonly"
+                return False
+
+        The ctx object description refer to :class:`condoor.controllers.fsm.FSM`.
+
+        If the action returns True then the FSM continues processing. If the action returns False then FSM stops
+        and the error message passed back to the ctx object is posted to the log.
+
+
+        The FSM state is the integer number. The FSM starts with initial ``state=0`` and finishes if the ``next_state``
+        is set to -1.
+
+        If action returns False then FSM returns False. FSM returns True if reaches the -1 state.
+
+        """
 
     max_transitions = 20
 
     class Context(object):
-        _slots__ = ['ctrl', 'event', 'state', 'failed', 'finished', 'msg']
+        _slots__ = ['fsm_name', 'ctrl', 'event_index', 'event', 'state', 'finished', 'msg']
         fsm_name = "FSM"
         ctrl = None
         event_index = 0
         event = None
         state = 0
-        failed = False
         finished = False
         msg = ""
 
         def __init__(self, fsm_name, ctrl):
+            """This is a class constructor.
+
+            Args:
+                fsm_name (str): Name of the FSM. This is used for logging.
+                ctrl (object): The controller object.
+            """
             self.ctrl = ctrl
             self.fsm_name = fsm_name
 
         def __str__(self):
-            return "FSM Context:E={},S={},FA={},FI={},M='{}'".format(
-                self.event, self.state, self.failed, self.finished, self.msg)
+            """Returns the string representing the context"""
+            return "FSM Context:E={},S={},FI={},M='{}'".format(
+                self.event, self.state, self.finished, self.msg)
 
     def __init__(self, name, ctrl, events, transitions, init_pattern=None, timeout=300):
+        """This is a FSM class constructor.
+
+        Args:
+            name (str): Name of the state machine used for logging purposes. Can't be *None*
+            ctrl (object): Controller class representing the connection to the device
+            events (list): List of expected strings or pexpect.TIMEOUT exception expected from the device.
+            transitions (list): List of tuples in defining the state machine transitions.
+            init_pattern (str): The pattern that was expected in the previous operation.
+            timeout (int): Timeout between states in seconds. Defaults to 300 seconds.
+
+        The transition tuple format is as follows::
+
+            (event, [list_of_states], next_state, action, timeout)
+
+        - event (str): string from the `events` list which is expected to be received from device.
+        - list_of_states (list): List of FSM states that triggers the action in case of event occurrence.
+        - next_state (int): Next state for FSM transition.
+        - action (func): function to be executed if the current FSM state belongs to `list_of_states` and the `event`
+          occurred. The action can be also *None* then FSM transits to the next state without any action. Action
+          can be also the exception, which is raised and FSM stops.
+        """
         self.events = events
         self.ctrl = ctrl
         self.timeout = timeout
@@ -85,9 +140,9 @@ class FSM(object):
         self.init_pattern = init_pattern
         self.logger = logging.getLogger(self.ctrl.hostname)
 
-        self.transition_table = self.compile(transitions, events)
+        self.transition_table = self._compile(transitions, events)
 
-    def compile(self, transitions, events):
+    def _compile(self, transitions, events):
         compiled = {}
         for transition in transitions:
             event, states, new_state, action, timeout = transition
@@ -106,6 +161,11 @@ class FSM(object):
         return compiled
 
     def run(self):
+        """This method starts the FSM.
+
+            Returns:
+                boolean: True if FSM reaches the last state or false if the exception or error message was raised
+        """
         ctx = FSM.Context(self.name, self.ctrl)
         transition_counter = 0
         timeout = self.timeout

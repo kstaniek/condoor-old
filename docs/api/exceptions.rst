@@ -3,9 +3,9 @@ Exceptions
 
 This chapter describes all the exceptions used by condoor module.
 
-.. automodule:: condoor.exceptions
+.. automodule:: condoor
 
-.. autoclass:: GeneralError
+.. autoexception:: GeneralError
    :show-inheritance:
 
    This is a base class for all exceptions raised by condoor module.
@@ -23,12 +23,17 @@ The exceptions below are related to connection handling events. There are covere
 - timeout errors caused by lack of response within defined amount of time.
 
 
-.. autoclass:: condoor.exceptions.ConnectionError
-   :show-inheritance:
-.. autoclass:: condoor.exceptions.ConnectionAuthenticationError
-   :show-inheritance:
-.. autoclass:: condoor.exceptions.ConnectionTimeoutError
-   :show-inheritance:
+.. autoexception:: condoor.ConnectionError
+
+   Bases: :class:`condoor.GeneralError`
+
+.. autoexception:: condoor.ConnectionAuthenticationError
+
+   Bases: :class:`condoor.ConnectionError`
+
+.. autoexception:: condoor.ConnectionTimeoutError
+
+   Bases: :class:`condoor.ConnectionError`
 
 Command exceptions
 ------------------
@@ -39,22 +44,36 @@ The exceptions below are related to command execution. There are covered three c
 - command syntax error,
 - command execution timeout.
 
-.. autoclass:: condoor.exceptions.CommandError
-   :show-inheritance:
+.. autoexception:: condoor.CommandError
 
    This is base class for command related exceptions which extends the standard message with a 'command' string
    for better user experience and error reporting.
 
+   Bases: :class:`condoor.GeneralError`
+
    .. automethod:: __init__
 
-.. autoclass:: condoor.exceptions.CommandSyntaxError
-   :show-inheritance:
-.. autoclass:: condoor.exceptions.CommandTimeoutError
-   :show-inheritance:
+.. autoexception:: condoor.CommandSyntaxError
+
+   Bases: :class:`condoor.CommandError`
+
+.. autoexception:: condoor.CommandTimeoutError
+
+   Bases: :class:`condoor.CommandError`
 
 URL exceptions
-------------------
+--------------
 This exception is raised when invalid URL to the :class:`condoor.Connection` class is passed.
 
-.. autoclass:: condoor.exceptions.InvalidHopInfoError
+.. autoexception:: condoor.InvalidHopInfoError
+
+   Bases: :class:`condoor.GeneralError`
+
+
+Pexpect exceptions
+------------------
+Those are exceptions derived from pexpect module. This exception is used in FSM and :meth:`condoor.Connection.run_fsm`
+
+.. autoexception:: condoor.TIMEOUT
    :show-inheritance:
+
