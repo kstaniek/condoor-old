@@ -121,8 +121,47 @@ def make_connection_from_urls(name, urls, platform='generic', account_manager=No
 
 @delegate("_driver", ("reload", "send", "enable", "run_fsm"))
 class Connection(object):
-    def __init__(self, hostname, urls, log_dir=None, log_level=logging.DEBUG, log_session=True,
-                 account_manager=None):
+    """This is the main class interface for Condoor. Use this class to create
+    a connection session, discover and control the remote device."""
+
+    def __init__(self, hostname, urls, log_dir=None, log_level=logging.DEBUG, log_session=True, account_manager=None):
+        """This is the constructor. The *hostname* parameter is a string representing the name of the device.
+        It is used mainly for verbose logging purposes.
+
+        The *urls* parameter represents the list of urls used to define the connection way to the
+        chain of devices before reaching the target device. It allows to have single device connection
+        over multiple jumphosts. For example::
+
+            ["ssh://<username>:<password>@<host>", "telnet://<username>:<password>@<host>"]
+
+        Currently there are two protocols supported: SSH and TELNET
+
+        An IOS/IOS XE devices may require a privileged level password (enable password). The url parser treats
+        the rest of the url (the path part + query + fragment part) as an privileged password. For example::
+
+            ["ssh://<username>:<password>@<host>", "telnet://<username>:<password>@<host>/<enable_password>"]
+
+        The *host* could be either the hostname or ip address.
+
+        There could be more devices in the list which allows having multiple jumphosts.
+        The last url in the list always represents the target device.
+
+
+        The *log_dir* parameter contains a string representing the full path to the logging directory.
+        The logging directory can store the device session log and the detailed Condoor debug log.
+        If there is no *log_dir* specified the current directory is used. The possible logging levels are as follows::
+        NOTSET=0
+        DEBUG=10
+        INFO=20
+        WARN=30
+        ERROR=40
+        CRITICAL=50
+
+        The default is DEBUG. If the *log_level* is set to 0 then no logging file is created.  The *log_session*
+        parameters defines whether the device session log is created or not.
+
+        """
+
         self._driver = None
         self._hostname = hostname
         self._urls = urls
@@ -164,16 +203,7 @@ class Connection(object):
         except IOError:
             self._session_fd = None
 
-    def store_property(self, key, value):
-        self.logger.debug("Store '{}' <- '{}'".format(key, str(value)))
-        self._info[key] = value
-
-    def get_property(self, key):
-        return self._info.get(key, None)
-
-    def detect_platform(self, logfile=None):
-        driver = make_connection_from_urls(self._hostname, self._urls, account_manager=self._account_manager,
-                                           logger=self.logger)
+    def _set_default_log_fd(self, logfile=None):
         if self._log_session:
             if logfile is None:
                 try:
@@ -181,7 +211,21 @@ class Connection(object):
                 except IOError:
                     self._session_fd = None
             else:
-                self._session_fd = logfile
+                self._session_fd = logfile if isinstance(logfile, file) else None
+
+    def discovery(self, logfile=None):
+        """This method detects the device details. This method discovery the several device attributes.
+
+        Args:
+            logfile (file): Optional file descriptor for session logging. The file must be open for write.
+                The session is logged only if ``log_session=True`` was passed to the constructor.
+                It the parameter is not passed then the default *session.log* file is created in `log_dir`.
+
+        """
+        driver = make_connection_from_urls(self._hostname, self._urls, account_manager=self._account_manager,
+                                           logger=self.logger)
+
+        self._set_default_log_fd(logfile)
 
         # FIXME: Handle exceptions
 
@@ -256,6 +300,30 @@ class Connection(object):
                 self._driver = make_connection_from_urls(self._hostname, self._urls, platform=driver,
                                                          account_manager=self._account_manager, logger=self.logger)
 
+    def store_property(self, key, value):
+        """This method stores a *value* identified by the *key* in the :class:`Connection` object.
+
+        Args:
+            key (str): Key name.
+            value (object): Object to be stored
+
+        """
+
+        self.logger.debug("Store '{}' <- '{}'".format(key, str(value)))
+        self._info[key] = value
+
+    def get_property(self, key):
+        """This method retrieves value of the *key* stored in :class:`Connection` object.
+        If no value was stored for give key then None is returned
+
+        Args:
+            key (str): Key name.
+        Returns:
+            object|None: The stored object identified by key or None
+        """
+
+        return self._info.get(key, None)
+
     @property
     def platform(self):
         if self._platform == 'generic':
@@ -301,28 +369,49 @@ class Connection(object):
             return False
 
     def connect(self, logfile=None):
-        if self._log_session:
-            if logfile is None:
-                try:
-                    self._session_fd = open(os.path.join(self._log_dir, 'session.log'), mode="a+")
-                except IOError:
-                    self._session_fd = None
-            else:
-                self._session_fd = logfile
+        """This method connects to the device. The discovery method must be called first. If not then
+        :class:`exceptions.ConnectionError` is raised
+
+        Args:
+            logfile (file): Optional file descriptor for session logging. The file must be open for write.
+                The session is logged only if ``log_session=True`` was passed to the constructor.
+                It the parameter is not passed then the default *session.log* file is created in `log_dir`.
+
+        Raises:
+            exceptions.ConnectionError: If the discovery method was not called first or there was a problem with getting
+             the connection.
+            exceptions.ConnectionAuthenticationError: If the authentication failed.
+            exceptions.ConnectionTimeoutError: If the connection timeout happened.
+
+        """
+
+        self._set_default_log_fd(logfile)
+
         try:
             return self._driver.connect(logfile=self._session_fd)
         except AttributeError:
             raise ConnectionError("Platform unknown. Try detect platform first")
 
     def reconnect(self, max_timeout=360, logfile=None):
-        if self._log_session:
-            if logfile is None:
-                try:
-                    self._session_fd = open(os.path.join(self._log_dir, 'session.log'), mode="a+")
-                except IOError:
-                    self._session_fd = None
-            else:
-                self._session_fd = logfile
+        """This method reconnects to the device. It can be called when after device reloads or the session was
+        disconnected either by device or jumphost. If multiple jumphosts are used then `reconnect` starts from
+        the last valid connection.
+
+        Args:
+            max_timeout (int): This is the maximum amount of time during the session tries to reconnect. It may take
+                longer depending on the TELNET or SSH default timeout.
+            logfile (file): Optional file descriptor for session logging. The file must be open for write.
+                The session is logged only if ``log_session=True`` was passed to the constructor.
+                It the parameter is not passed then the default *session.log* file is created in `log_dir`.
+
+        Raises:
+            exceptions.ConnectionError: If the discovery method was not called first or there was a problem with getting
+             the connection.
+            exceptions.ConnectionAuthenticationError: If the authentication failed.
+            exceptions.ConnectionTimeoutError: If the connection timeout happened.
+
+        """
+        self._set_default_log_fd(logfile)
 
         begin = time.time()
         expired = 0.0

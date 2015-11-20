@@ -6,3 +6,4 @@ API documentation
 
    condoor
    fsm
+   exceptions

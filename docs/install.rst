@@ -12,4 +12,4 @@ Or::
 Requirements
 ------------
 
-This version of Pexpect requires Python 2.7.
+This version of Condoor requires Python 2.7.

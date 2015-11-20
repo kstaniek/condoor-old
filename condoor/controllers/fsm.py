@@ -51,6 +51,11 @@ def action(func):
 
 
 class FSM(object):
+    """This is class defining the Finite State Machine implementation which can be executed
+    on the :class:`condoor.Connection` object. It helps handing various device response strings and
+    taking appropriate action.
+    """
+
     max_transitions = 20
 
     class Context(object):

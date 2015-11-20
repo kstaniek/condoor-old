@@ -76,7 +76,7 @@ class Connection(generic.Connection):
     def boot(self):
         pass
 
-    def enalbe(self):
+    def enable(self):
         pass
 
     def reload(self, rommon_boot_command="boot"):
