@@ -13,6 +13,11 @@ The module can be installed using::
 
 The required packages will be installed automatically.
 
+Documentation
+=============
+
+`Docs on ReadTheDocs <http://condoor.readthedocs.org/>`_
+
 
 Required packages
 =================
@@ -21,4 +26,3 @@ Required packages
 * keyring (optional)
 
 
-`Docs on ReadTheDocs <http://condoor.readthedocs.org/>`_
