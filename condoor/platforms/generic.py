@@ -294,10 +294,93 @@ class Connection(object):
         self.send()
         return result
 
-    def enable(self):
+    def enable(self, enable_password=None):
+        """This method changes the device mode to privileged. If device does not support privileged mode the
+        the informational message to the log will be posted.
+
+        Args:
+            enable_password (str): The privileged mode password. This is optional parameter. If password is not
+                provided but required the password from url will be used. Refer to :class:`condoor.Connection`
+        """
         self.logger.info("Ignoring. Not supported on this platform")
 
+    def reload(self):
+        """This method reloads the device and waits for device to boot up. It post the informational message to the
+        log if not implemented by device driver"""
+        self.logger.info("Ignoring. Not implemented for this platform")
+
     def run_fsm(self, name, command, events, transitions, timeout):
+        """This method instantiate and run the Finite State Machine for the current device connection. Here is the
+        example of usage::
+
+            test_dir = "rw_test"
+            dir = "disk0:" + test_dir
+            REMOVE_DIR = re.compile(re.escape("Remove directory filename [{}]?".format(test_dir)))
+            DELETE_CONFIRM = re.compile(re.escape("Delete {}/{}[confirm]".format(filesystem, test_dir)))
+            REMOVE_ERROR = re.compile(re.escape("%Error Removing dir {} (Directory doesnot exist)".format(test_dir)))
+
+            command = "rmdir {}".format(dir)
+            events = [device.prompt, REMOVE_DIR, DELETE_CONFIRM, REMOVE_ERROR, pexpect.TIMEOUT]
+            transitions = [
+                (REMOVE_DIR, [0], 1, send_newline, 5),
+                (DELETE_CONFIRM, [1], 2, send_newline, 5),
+                # if dir does not exist initially it's ok
+                (REMOVE_ERROR, [0], 2, None, 0),
+                (device.prompt, [2], -1, None, 0),
+                (pexpect.TIMEOUT, [0, 1, 2], -1, error, 0)
+
+            ]
+            manager.log("Removing test directory from {} if exists".format(dir))
+            if not device.run_fsm("DELETE_DIR", command, events, transitions, timeout=5):
+                return False
+
+        This FSM tries to remove directory from disk0:
+
+        Args:
+            name (str): Name of the state machine used for logging purposes. Can't be *None*
+            command (str): The command sent to the device before FSM starts
+            events (list): List of expected strings or pexpect.TIMEOUT exception expected from the device.
+            transitions (list): List of tuples in defining the state machine transitions.
+            timeout (int): Default timeout between states in seconds.
+
+        The transition tuple format is as follows::
+
+            (event, [list_of_states], next_state, action, timeout)
+
+        - event (str): string from the `events` list which is expected to be received from device.
+        - list_of_states (list): List of FSM states that triggers the action in case of event occurrence.
+        - next_state (int): Next state for FSM transition.
+        - action (func): function to be executed if the current FSM state belongs to `list_of_states` and the `event`
+          occurred. The action can be also *None* then FSM transits to the next state without any action. Action
+          can be also the exception, which is raised and FSM stops.
+
+        The example action::
+
+            def send_newline(ctx):
+                ctx.ctrl.sendline()
+                return True
+
+            def error(ctx):
+                ctx.message = "Filesystem error"
+                return False
+
+            def readonly(ctx):
+                ctx.message = "Filesystem is readonly"
+                return False
+
+        The ctx object description refer to :class:`condoor.controllers.fsm.FSM`.
+
+        If the action returns True then the FSM continues processing. If the action returns False then FSM stops
+        and the error message passed back to the ctx object is posted to the log.
+
+
+        The FSM state is the integer number. The FSM starts with initial ``state=0`` and finishes if the ``next_state``
+        is set to -1.
+
+        If action returns False then FSM returns False. FSM returns True if reaches the -1 state.
+
+        """
+
         self.ctrl.send(command)
         self.ctrl.expect_exact(command)
         self.ctrl.sendline()

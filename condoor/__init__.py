@@ -324,50 +324,6 @@ class Connection(object):
 
         return self._info.get(key, None)
 
-    @property
-    def platform(self):
-        if self._platform == 'generic':
-            self.detect_platform()
-        return self._platform
-
-    @platform.setter
-    def platform(self, platform):
-        self._platform = platform
-
-    @property
-    def family(self):
-        if self._family == 'generic':
-            self.detect_platform()
-        return self._family
-
-    @property
-    def prompt(self):
-        try:
-            return self._driver.prompt
-        except AttributeError:
-            return None
-
-    @property
-    def os_type(self):
-        try:
-            return self._os_type
-        except AttributeError:
-            return 'unknown'
-
-    @property
-    def hostname(self):
-        try:
-            return self._hostname
-        except AttributeError:
-            return "host"
-
-    @property
-    def is_connected(self):
-        try:
-            return self._driver.is_connected
-        except AttributeError:
-            return False
-
     def connect(self, logfile=None):
         """This method connects to the device. The discovery method must be called first. If not then
         :class:`exceptions.ConnectionError` is raised
@@ -432,6 +388,9 @@ class Connection(object):
             raise ConnectionTimeoutError("Unable to reconnect to device within {} s".format(max_timeout))
 
     def disconnect(self):
+        """
+        This method disconnect the session from the device and all the jumphosts in the path.
+        """
         try:
             self._driver.disconnect()
         except AttributeError:
@@ -439,3 +398,47 @@ class Connection(object):
         finally:
             if self._session_fd:
                 self._session_fd.close()
+
+    @property
+    def platform(self):
+        if self._platform == 'generic':
+            self.detect_platform()
+        return self._platform
+
+    @platform.setter
+    def platform(self, platform):
+        self._platform = platform
+
+    @property
+    def family(self):
+        if self._family == 'generic':
+            self.detect_platform()
+        return self._family
+
+    @property
+    def prompt(self):
+        try:
+            return self._driver.prompt
+        except AttributeError:
+            return None
+
+    @property
+    def os_type(self):
+        try:
+            return self._os_type
+        except AttributeError:
+            return 'unknown'
+
+    @property
+    def hostname(self):
+        try:
+            return self._hostname
+        except AttributeError:
+            return "host"
+
+    @property
+    def is_connected(self):
+        try:
+            return self._driver.is_connected
+        except AttributeError:
+            return False

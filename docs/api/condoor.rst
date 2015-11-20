@@ -15,6 +15,8 @@ Connection class
    .. automethod:: disconnect
    .. automethod:: store_property
    .. automethod:: get_property
-   .. automethod:: reload(rommon_boot_command='boot')
-
+   .. automethod:: condoor.platforms.generic.Connection.reload
+   .. automethod:: condoor.platforms.generic.Connection.send
+   .. automethod:: condoor.platforms.generic.Connection.enable
+   .. automethod:: condoor.platforms.generic.Connection.run_fsm
 
