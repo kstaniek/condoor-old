@@ -69,7 +69,7 @@ setup(
     author='Klaudiusz Staniek',
     author_email='klstanie [at] cisco.com',
     url='https://github.com/kstaniek/condoor',
-    download_url='https://github.com/kstaniek/condoor/tarball/0.0.1',
+    download_url='https://github.com/kstaniek/condoor/tarball/0.0.2',
     keywords='cisco,automation',
     tests_require=['tox', 'pytest'],
     platforms=['any'],
