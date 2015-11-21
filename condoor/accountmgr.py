@@ -38,7 +38,7 @@ except:
 
 
 def make_realm(name):
-    return "Accelerated Upgrade@{}".format(name)
+    return "Condoor@{}".format(name)
 
 
 class AccountManager(object):

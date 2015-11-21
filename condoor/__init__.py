@@ -60,6 +60,9 @@ supported_platforms = {
         "version": ["ASR-9904"],
         "diag_eXR": ["ASR-9904"]
     },
+    "ASR-9010": {
+        "version": ["ASR 9010"]
+    },
     "ASR-9006": {
         "version": ["ASR 9006"]
     },
@@ -89,7 +92,7 @@ supported_platforms = {
 }
 
 platform_families = {
-    "ASR9K": ["ASR-9000", "ASR-9001", "ASR-9006", "ASR-9904"],
+    "ASR9K": ["ASR-9000", "ASR-9904", "ASR-9010", "ASR-9006", "ASR-9001"],
     "NCS4K": ["NCS-4000"],
     "NCS6K": ["NCS-6000", "NCS-6008"],
     "ASR900": ["ASR-903", "ASR-901"],
@@ -175,6 +178,7 @@ class Connection(object):
         self._os_type = None
         self._os_version = None
         self._family = None
+        self._prompt = None
         self._log_dir = log_dir
         self._log_session = log_session
         self.logger = logging.getLogger(hostname)
@@ -236,7 +240,7 @@ class Connection(object):
 
         driver.connect(logfile=self._session_fd)
 
-        show_version = driver.send("show version ")
+        show_version = driver.send("show version")
         show_diag_xr = None
 
         match = re.search("Version (.*)[ |\n]", show_version)
@@ -287,23 +291,33 @@ class Connection(object):
                 continue
             break
 
+        self._prompt = driver.prompt
+        driver.disconnect()
+
         for family, platforms in platform_families.iteritems():
             if self._platform in platforms:
                 self._family = family
                 break
 
-        self.logger.debug("Family: {}".format(self._family))
-        self.logger.debug("Platform: {}".format(self._platform))
-        self.logger.debug("OS: {}".format(self._os_type))
-        self.logger.debug("Version: {}".format(self._os_version))
-        self.logger.debug("Prompt: '{}'".format(driver.prompt))
-
-        driver.disconnect()
-
         for driver, families in drivers.iteritems():
             if self._family in families:
                 self._driver = make_connection_from_urls(self._hostname, self._urls, platform=driver,
                                                          account_manager=self._account_manager, logger=self.logger)
+                break
+        else:
+            self.logger.critical("No driver found for target device. Fatal error.")
+            raise ConnectionError("No driver found for target device. Fatal error")
+
+        self._driver.determine_hostname(self._prompt)
+        self._hostname = self._driver.hostname
+
+        self.logger.info("Hostname: '{}'".format(self.hostname))
+        self.logger.info("Family: {}".format(self.family))
+        self.logger.info("Platform: {}".format(self.platform))
+        self.logger.info("OS: {}".format(self.os_type))
+        self.logger.info("Version: {}".format(self.os_version))
+        self.logger.info("Prompt: '{}'".format(self._prompt))
+
 
     def store_property(self, key, value):
         """This method stores a *value* identified by the *key* in the :class:`Connection` object.
@@ -408,7 +422,7 @@ class Connection(object):
     def platform(self):
         """Returns the string representing hardware platform model. For example: ASR-9010, ASR922, NCS-4006, etc."""
         if self._platform == 'generic':
-            self.detect_platform()
+            self.discovery()
         return self._platform
 
     @platform.setter
@@ -419,7 +433,7 @@ class Connection(object):
     def family(self):
         """Returns the string representing hardware platform family. For example: ASR9K, ASR900, NCS6K, etc."""
         if self._family == 'generic':
-            self.detect_platform()
+            self.discovery()
         return self._family
 
     @property
@@ -436,6 +450,15 @@ class Connection(object):
         *None*"""
         try:
             return self._os_type
+        except AttributeError:
+            return None
+
+    @property
+    def os_version(self):
+        """Returns the string representing the Operating System version. For example 5.3.1.
+        If not detected returns *None*"""
+        try:
+            return self._os_version
         except AttributeError:
             return None
 

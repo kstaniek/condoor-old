@@ -77,6 +77,12 @@ class Connection(generic.Connection):
         if mode == '>':
             self.enable()
 
+    def determine_hostname(self, prompt):
+        result = re.search(r"^(.*)#", prompt)
+        if result:
+            self.hostname = result.group(1)
+            self.logger.debug("Hostname detected: {}".format(self.hostname))
+
     def prepare_terminal_session(self):
         self.send('terminal len 0')
         self.send('terminal width 0')

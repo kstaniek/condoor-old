@@ -217,7 +217,7 @@ class Controller(object):
                 hop += 1
 
         self._session.close()
-        self._dbg(20, "Disconnected")
+        self._dbg(10, "Disconnected")
         self.last_hop = 0
         self.last_pattern = None
         self.connected = False

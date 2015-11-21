@@ -71,19 +71,6 @@ def _c(ctx, msg):
 
 
 class Connection(object):
-    """
-    Generic connection driver providing the basic API to the physical devices.
-    It implements the following methods:
-        - connect
-        - disconnect
-        - send
-        - send_xml
-
-    The Driver class can be extended by the hardware specific classes.
-    The derived classes can use different controller implementation
-    providing additional flexibility.
-
-    """
     platform = 'generic'
     shell_prompt = "\$\s?|>\s?|#\s?|\%\s?"
     connection_closed_re = re.compile("Connection closed")
@@ -104,27 +91,7 @@ class Connection(object):
     press_return = re.compile("Press RETURN to get started\.")
     more = re.compile(" --More-- ")
 
-    def __init__(
-            self,
-            hostname,
-            hosts,
-            controller_class,
-            logger,
-            account_manager=None):
-        """Initialize the Driver object.
-
-         Args:
-            hosts: Single object or list of HopInfo objects
-            controller: Controller class used for low level device
-                communication.
-            account_manager: optional object providing the safe credentials
-                management. If password is missing in the HopInfo
-                during the connection setup the account_manager is used to
-                retrieve the password.
-            debug: debug level (0 - none .. 5 - debug)
-            logfile: file handler descriptor (fd) for session log file.
-        """
-
+    def __init__(self, hostname, hosts, controller_class, logger, account_manager=None):
         self.hosts = to_list(hosts)
         self.account_manager = account_manager
         self.pending_connection = False
@@ -466,6 +433,10 @@ class Connection(object):
             "Mode: {}".format(self.mode)
         ))
 
+    def determine_hostname(self, prompt):
+        self.logger.debug(_c(self.hostname, "Hostname detecting not implemented for generic driver"))
+
+    # Actions for FSM
     @action
     def _expected_prompt(self, ctx):
         prompt = self.ctrl.after
@@ -525,7 +496,6 @@ class Connection(object):
 
     @action
     def _stays_connected(self, ctx):
-        #self.disconnect()
         self.ctrl.connected = True
         self.ctrl.last_hop = len(self.ctrl.hosts) - 1  # Authentication needed
         self.ctrl.last_pattern = PRESS_RETURN
