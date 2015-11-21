@@ -7,9 +7,15 @@ It supports keyring for password management and multiple jump hosts.
 Installation
 ------------
 
-The module can be installed using::
+The module can be installed from source using::
 
     python setup.py install
+
+
+or from PyPI repository::
+
+    pip install condoor
+
 
 The required packages will be installed automatically.
 
