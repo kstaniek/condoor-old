@@ -44,7 +44,7 @@ with codecs.open('README.rst', 'r', encoding='UTF-8') as readme:
     LONG_DESCRIPTION = ''.join(readme)
 
 CLASSIFIERS = [
-    'Development Status :: 4 - Beta'
+    'Development Status :: 4 - Beta',
     'Programming Language :: Python',
     'Programming Language :: Python :: 2.7',
     'Intended Audience :: Developers',
