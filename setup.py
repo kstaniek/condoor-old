@@ -77,7 +77,7 @@ setup(
     package_data={'': ['LICENSE', ], },
     package_dir={'condoor': 'condoor'},
     include_package_data=True,
-    install_requires=['pexpect>=3.1',
+    install_requires=['pexpect>=4.0.1',
                       'keyring'],
     license='Apache 2.0',
     classifiers=CLASSIFIERS,
