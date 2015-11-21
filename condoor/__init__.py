@@ -213,7 +213,7 @@ class Connection(object):
             if logfile is None:
                 try:
                     self._session_fd = open(os.path.join(self._log_dir, 'session.log'), mode="a+")
-                except IOError:
+                except (IOError, AttributeError):
                     self._session_fd = None
             else:
                 self._session_fd = logfile if isinstance(logfile, file) else None
