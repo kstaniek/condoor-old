@@ -1,0 +1,1 @@
+exclude pexpect/async.py

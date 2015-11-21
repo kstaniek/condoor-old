@@ -37,7 +37,6 @@ try:
 except ImportError:
     from distutils.core import setup, Command
 
-import condoor
 
 DESCRIPTION = 'This is a python module providing access to Cisco devices over Telnet and SSH'
 with codecs.open('README.rst', 'r', encoding='UTF-8') as readme:
@@ -64,7 +63,7 @@ NAME = 'condoor'
 
 setup(
     name=NAME,
-    version=condoor.__version__,
+    version='0.0.2',
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     author='Klaudiusz Staniek',

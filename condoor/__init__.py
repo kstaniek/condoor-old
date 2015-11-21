@@ -47,8 +47,6 @@ This is a python module providing access to Cisco devices over Telnet and SSH.
 
 """
 
-__version__ = '0.0.1'
-
 __all__ = ['make_connection_from_urls', 'Connection', 'FSM', 'TIMEOUT', 'action',
            'CommandTimeoutError', 'ConnectionError', 'ConnectionTimeoutError', 'CommandError',
            'CommandSyntaxError', 'ConnectionAuthenticationError']
