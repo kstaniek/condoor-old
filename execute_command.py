@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 # =============================================================================
-# driver_test.py
-#
 # Copyright (c)  2015, Cisco Systems
 # All rights reserved.
 #
@@ -28,19 +26,16 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
+import logging
 import getpass
 import optparse
 import sys
 
-import logging
-
-
 import condoor
-
 from condoor.accountmgr import AccountManager
 
 
-usage = '%prog -H url [-J url] [-d <level>] [-l <filename>] [-h] command'
+usage = '%prog -H url [-J url] [-d <level>] [-h] command'
 usage += '\nCopyright (C) 2015 by Klaudiusz Staniek'
 parser = optparse.OptionParser(usage=usage)
 
@@ -63,14 +58,6 @@ prints out debug information about the device connection stage.
 LEVEL is a string of DEBUG, INFO, WARNING, ERROR, CRITICAL.
 Default is CRITICAL.
 '''.strip())
-
-
-parser.add_option(
-        '--log', '-l', dest='session_log', default=None, metavar='FILE',
-        help='''
-file name path for device session log.
-'''.strip())
-
 
 logging_map = {
     0: 60, 1: 50, 2: 40, 3: 30, 4: 20, 5: 10
@@ -106,14 +93,12 @@ if __name__ == "__main__":
         parser.error("Missing command")
 
     numeric_level = getattr(logging, options.debug.upper(), 50)
-    #logging.getLogger().setLevel(numeric_level)
 
     try:
         import keyring
         am = AccountManager(config_file='accounts.cfg', password_cb=prompt_for_password)
     except ImportError:
-        print("No keyring library installed. Password must "
-              "be provided in url.")
+        print("No keyring library installed. Password must be provided in url.")
         am = None
 
     try:
@@ -135,4 +120,3 @@ if __name__ == "__main__":
         print "Connection error: %s" % e
     except condoor.GeneralError as e:
         print "Error: %s" % e
-

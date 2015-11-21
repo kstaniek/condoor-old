@@ -23,6 +23,7 @@ Connection class
    .. autoattribute:: family
    .. autoattribute:: platform
    .. autoattribute:: os_type
+   .. autoattribute:: os_version
    .. autoattribute:: hostname
    .. autoattribute:: prompt
    .. autoattribute:: is_connected
