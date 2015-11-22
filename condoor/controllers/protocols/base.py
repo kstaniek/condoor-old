@@ -74,16 +74,9 @@ UNABLE_TO_CONNECT = "nodename nor servname provided, or not known|" \
                     "[C|c]onnection refused"
 
 
-
 class Protocol(object):
 
-    def __init__(
-            self,
-            controller,
-            node_info,
-            account_manager=None,
-            logfile=None,
-    ):
+    def __init__(self, controller, node_info, account_manager=None, logfile=None):
         self.protocol = node_info.protocol
         self.hostname = node_info.hostname
         self.port = node_info.port
@@ -100,7 +93,7 @@ class Protocol(object):
         self.username = username
         self.prompt = ""
         self.last_pattern = None
-        self.logger = logging.getLogger(self.ctrl.hostname)
+        self.logger = logging.getLogger("condoor.controller.protocol")
 
     def _spawn_session(self, command):
         self._dbg(10, "Executing command: '{}'".format(command))

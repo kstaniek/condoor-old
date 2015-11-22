@@ -67,7 +67,7 @@ class Controller(object):
         self.last_hop = 0
         self.last_pattern = None
 
-        self.logger = logging.getLogger(self.hostname)
+        self.logger = logging.getLogger("condoor.controller")
 
         self._clear_detected_prompts()
 
@@ -223,9 +223,7 @@ class Controller(object):
         self.connected = False
 
     def _dbg(self, level, msg):
-        self.logger.log(
-            level, "[{}]: [CTRL] {}".format(self.hostname, msg)
-        )
+        self.logger.log(level, "[{}]: [CTRL] {}".format(self.hostname, msg))
 
     def _clear_detected_prompts(self):
         self.detected_prompts = []

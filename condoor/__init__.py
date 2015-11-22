@@ -31,6 +31,7 @@ import os
 import re
 import logging
 import time
+from functools import wraps
 
 from hopinfo import make_hop_info_from_url
 from controllers.pexpect_ctrl import Controller
@@ -53,41 +54,41 @@ __all__ = ['make_connection_from_urls', 'Connection', 'FSM', 'TIMEOUT', 'action'
 
 supported_platforms = {
     "ASR-9000": {  # generic
-                   "version": ["ASR9K"],
+                   "version": ["ASR9K "],
                    "continue": True
     },
     "ASR-9904": {
-        "version": ["ASR-9904"],
-        "diag_eXR": ["ASR-9904"]
+        "version": ["ASR-9904 "],
+        "diag_eXR": ["ASR-9904 "]
     },
     "ASR-9010": {
-        "version": ["ASR 9010"]
+        "version": ["ASR 9010 ", "ASR-9010 "]  # yes, we've got two different chassis ID for the same platform
     },
     "ASR-9006": {
-        "version": ["ASR 9006"]
+        "version": ["ASR 9006 "]
     },
     "ASR-9001": {
-        "version": ["ASR-9001"]
+        "version": ["ASR-9001 "]
     },
     "NCS-4000": {  # generic
-                   "version": ["NCS-4000"],
+                   "version": ["NCS-4000 "],
                    "continue": True
     },
     "NCS-6000": {  # generic
-                   "version": ["NCS-6000"],
+                   "version": ["NCS-6000 "],
                    "continue": True
     },
     "NCS-6008": {
-        "diag_eXR": ["NCS 6008"]
+        "diag_eXR": ["NCS 6008 "]
     },
     "ASR-903": {
-        "version": ["ASR-903"]
+        "version": ["ASR-903 "]
     },
     "ASR-901": {
-        "version": ["ASR-901"]
+        "version": ["ASR-901 "]
     },
     "CRS-16": {
-        "version": ["CRS-16"]
+        "version": ["CRS-16 "]
     }
 }
 
@@ -102,28 +103,24 @@ platform_families = {
 drivers = {
     "ASR9K": ["ASR9K", "CRS", "NCS6K", "NCS4K"],
     "IOS": ["ASR900"],
+    "generic": ["generic"]
 
 }
 
-
-def make_connection_from_urls(name, urls, platform='generic', account_manager=None, logger=None):
-    if logger is None:
-        logger = logging.getLogger(name)
-        logger.addHandler(logging.NullHandler())
-
-    module_str = 'condoor.platforms.%s' % platform
-    try:
-        __import__(module_str)
-        module = sys.modules[module_str]
-        driver_class = getattr(module, 'Connection')
-    except ImportError:
-        return None
-
-    nodes = []
-    for url in urls:
-        nodes.append(make_hop_info_from_url(url))
-
-    return driver_class(name, nodes, Controller, logger, account_manager=account_manager)
+# def make_connection_from_urls(name, urls, platform='generic', account_manager=None, logger=None):
+#     if logger is None:
+#         logger = logging.getLogger(name)
+#         logger.addHandler(logging.NullHandler())
+#
+#     module_str = 'condoor.platforms.%s' % platform
+#     try:
+#         __import__(module_str)
+#         module = sys.modules[module_str]
+#         driver_class = getattr(module, 'Connection')
+#     except ImportError:
+#         raise GeneralError("Platform {} not supported".format(platform))
+#
+#     return driver_class(name, nodes, Controller, logger, account_manager=account_manager)
 
 
 @delegate("_driver", ("reload", "send", "enable", "run_fsm"))
@@ -131,7 +128,7 @@ class Connection(object):
     """This is the main class interface for Condoor. Use this class to create
     a connection session, discover and control the remote device."""
 
-    def __init__(self, hostname, urls, log_dir=None, log_level=logging.DEBUG, log_session=True, account_manager=None):
+    def __init__(self, name, urls, log_dir=None, log_level=logging.DEBUG, log_session=True, account_manager=None):
         """This is the constructor. The *hostname* parameter is a string representing the name of the device.
         It is used mainly for verbose logging purposes.
 
@@ -171,8 +168,31 @@ class Connection(object):
         """
 
         self._driver = None
-        self._hostname = hostname
-        self._urls = urls
+        self._name = name
+        self._hostname = name
+
+        # normalise the urls to the list of the lists of str (for multiple console connections to the device)
+        if isinstance(urls, list):
+            if urls:
+                if isinstance(urls[0], list):
+                    # multiple connections (list of the lists)
+                    self._urls = urls
+                elif isinstance(urls[0], str):
+                    # single connections (make it list of the lists)
+                    self._urls = [urls]
+            else:
+                raise GeneralError("No target host url provided.")
+        elif isinstance(urls, str):
+            self._urls = [[urls]]
+
+        nodes = []
+        for index, target in enumerate(self._urls):
+            nodes.insert(index, list())
+            for url in target:
+                nodes[index].append(make_hop_info_from_url(url))
+        self._nodes = nodes
+        self._last_driver_index = 0
+
         self._account_manager = account_manager
         self._platform = 'generic'
         self._os_type = None
@@ -181,7 +201,7 @@ class Connection(object):
         self._prompt = None
         self._log_dir = log_dir
         self._log_session = log_session
-        self.logger = logging.getLogger(hostname)
+        self.logger = logging.getLogger('condoor')
         self._info = {}
 
         if log_level > 0:
@@ -222,6 +242,40 @@ class Connection(object):
             else:
                 self._session_fd = logfile if isinstance(logfile, file) else None
 
+    def _init_driver(self, driver_name=None):
+        if driver_name is None:
+            for driver_name, families in drivers.iteritems():
+                if self._family in families:
+                    break
+            else:
+                driver_name = 'generic'
+
+        module_str = 'condoor.platforms.%s' % driver_name
+        try:
+            __import__(module_str)
+            module = sys.modules[module_str]
+            driver_class = getattr(module, 'Connection')
+        except ImportError:
+            raise GeneralError("Platform {} not supported".format(self._platform))
+
+        driver = driver_class(
+            self._hostname,
+            self._nodes[self._last_driver_index],
+            Controller,
+            self.logger,
+            account_manager=self._account_manager
+        )
+        self._driver = driver
+
+    def _shift_driver(self):
+        no_hosts = len(self._nodes)
+        del self._driver
+        self._last_driver_index += 1
+        if self._last_driver_index >= no_hosts:
+            self._last_driver_index = 0
+
+        self._init_driver()
+
     def discovery(self, logfile=None):
         """This method detects the device details. This method discovery the several device attributes.
 
@@ -231,16 +285,27 @@ class Connection(object):
                 It the parameter is not passed then the default *session.log* file is created in `log_dir`.
 
         """
-        driver = make_connection_from_urls(self._hostname, self._urls, account_manager=self._account_manager,
-                                           logger=self.logger)
 
         self._set_default_log_fd(logfile)
 
-        # FIXME: Handle exceptions
+        self._init_driver()
 
-        driver.connect(logfile=self._session_fd)
+        no_hosts = len(self._nodes)
+        for i in xrange(no_hosts):
+            try:
+                self._driver.connect(logfile=self._session_fd)
+                break
+            except ConnectionError:
+                self._shift_driver()
+        else:
+            raise ConnectionError("Unable to connect to the device")
 
-        show_version = driver.send("show version")
+        try:
+            show_version = self._driver.send("show version brief", timeout=120)
+        except CommandError:
+            # IOS Hack - need to check if show version brief is supported on IOS/IOSXE
+            show_version = self._driver.send("show version", timeout=120)
+
         show_diag_xr = None
 
         match = re.search("Version (.*)[ |\n]", show_version)
@@ -278,7 +343,7 @@ class Connection(object):
                     break
                 if test == 'diag_eXR' and self._os_type == 'eXR':
                     if show_diag_xr is None:
-                        show_diag_xr = driver.send("show diag summary")
+                        show_diag_xr = self._driver.send("show diag summary")
                     for pattern in patterns:
                         match = re.search(pattern, show_diag_xr)
                         if match:
@@ -291,24 +356,20 @@ class Connection(object):
                 continue
             break
 
-        self._prompt = driver.prompt
-        driver.disconnect()
+        self._prompt = self._driver.prompt
+        self._driver.disconnect()
 
         for family, platforms in platform_families.iteritems():
             if self._platform in platforms:
                 self._family = family
                 break
-
-        for driver, families in drivers.iteritems():
-            if self._family in families:
-                self._driver = make_connection_from_urls(self._hostname, self._urls, platform=driver,
-                                                         account_manager=self._account_manager, logger=self.logger)
-                break
         else:
-            self.logger.critical("No driver found for target device. Fatal error.")
-            raise ConnectionError("No driver found for target device. Fatal error")
+            self._family = 'generic'
 
+        # getting the new driver based on detected device family
+        self._init_driver()
         self._driver.determine_hostname(self._prompt)
+
         self._hostname = self._driver.hostname
 
         self.logger.info("Hostname: '{}'".format(self.hostname))
@@ -359,13 +420,28 @@ class Connection(object):
             ConnectionTimeoutError: If the connection timeout happened.
 
         """
-
         self._set_default_log_fd(logfile)
 
-        try:
-            return self._driver.connect(logfile=self._session_fd)
-        except AttributeError:
-            raise ConnectionError("Platform unknown. Try detect platform first")
+        no_hosts = len(self._nodes)
+        result = False
+        for i in xrange(no_hosts):
+            try:
+                result = self._driver.connect(logfile=self._session_fd)
+                break
+            except ConnectionError as e:
+                # if this is last try raise the exception
+                if (i + 1) == no_hosts:
+                    raise e
+                else:
+                    self._shift_driver()
+            except AttributeError:
+                raise ConnectionError("Platform unknown. Try detect platform first")
+
+        else:
+            # This will never be executed
+            raise ConnectionError("Unable to connect to the device")
+
+        return result
 
     def reconnect(self, max_timeout=360, logfile=None):
         """This method reconnects to the device. It can be called when after device reloads or the session was
@@ -399,6 +475,7 @@ class Connection(object):
                 break
             except ConnectionError:
                 expired = time.time() - begin
+                self._shift_driver()
             except AttributeError:
                 raise ConnectionError("Platform unknown. Try detect platform first")
             attempt += 1

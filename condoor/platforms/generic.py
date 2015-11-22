@@ -38,7 +38,8 @@ from ..exceptions import \
     ConnectionError,\
     ConnectionTimeoutError, \
     CommandSyntaxError, \
-    CommandTimeoutError
+    CommandTimeoutError, \
+    GeneralError
 
 from ..controllers.fsm import FSM, action
 
@@ -91,15 +92,16 @@ class Connection(object):
     press_return = re.compile("Press RETURN to get started\.")
     more = re.compile(" --More-- ")
 
-    def __init__(self, hostname, hosts, controller_class, logger, account_manager=None):
-        self.hosts = to_list(hosts)
+    def __init__(self, name, hosts, controller_class, logger, account_manager=None):
+        self.hosts = hosts
         self.account_manager = account_manager
         self.pending_connection = False
         self.connected = False
         self.command_execution_pending = Lock()
         self.ctrl = None
         self.ctrl_class = controller_class
-        self.hostname = hostname
+        self.name = name
+        self.hostname = name
         self.logger = logger
         self.prompt = self.platform_prompt
         self._os_type = 'unknown'
@@ -125,29 +127,19 @@ class Connection(object):
             True if connection is established successfully
             False on failure.
         """
-        if not self.connected:
-            self.ctrl = self.ctrl_class(self,  # delegation to controller
-                                        self.hostname,
-                                        self.hosts,
-                                        self.account_manager,
-                                        logfile=logfile)
 
-            self.logger.info(
-                _c(self.hostname, "Connecting to {}".format(self.__repr__())))
+        if not self.connected:
+            self.ctrl = self.ctrl_class(self, self.hostname, self.hosts, self.account_manager, logfile=logfile)
+            self.logger.info(_c(self.hostname, "Connecting to {}".format(self.__repr__())))
         self.connected = self.ctrl.connect()
 
         if self.connected:
-            self.logger.info(
-                _c(self.hostname, "Connected to {}".format(self.__repr__())))
-
+            self.logger.info(_c(self.hostname, "Connected to {}".format(self.__repr__())))
             self._compile_prompts()
             self.prepare_prompt()
             self.prepare_terminal_session()
-
         else:
-            raise ConnectionError(
-                "Connection failed", self.hostname
-            )
+            raise ConnectionError("Connection failed", self.hostname)
 
         return self.connected
 
@@ -162,8 +154,7 @@ class Connection(object):
             None
 
         """
-        self.logger.info(
-            _c(self.hostname, "Disconnecting from {}".format(self.__repr__())))
+        self.logger.info(_c(self.hostname, "Disconnecting from {}".format(self.__repr__())))
         self.ctrl.disconnect()
         self.connected = False
         self.pending_connection = False
@@ -184,9 +175,9 @@ class Connection(object):
         Send the command to the device and return the output
 
         Args:
-            cmd (str): command string for execution
-            timeout (int): timeout in seconds
-            wait_for_string (str): this is optional string that driver
+            cmd (str): Command string for execution. Defaults to empty string.
+            timeout (int): Timeout in seconds. Defaults to 60s
+            wait_for_string (str): This is optional string that driver
                 waits for after command execution. If none the detected
                 prompt will be used.
 
@@ -194,24 +185,21 @@ class Connection(object):
             A string containing the command output.
 
         Raises:
-            ConnectionError:
+            ConnectionError: General connection error during command execution
+            CommandSyntaxError: Command syntax error or unknown command.
+            CommandTimeoutError: Timeout during command execution
         """
         if self.connected:
-            self.logger.debug(
-                _c(self.hostname, "Sending command: '{}'".format(cmd)))
+            self.logger.debug(_c(self.hostname, "Sending command: '{}'".format(cmd)))
 
             try:
                 self._execute_command(cmd, timeout, wait_for_string)
             except ConnectionError:
-                self.logger.warn(
-                    _c(self.hostname,
-                        "Connection lost. Disconnecting."))
+                self.logger.warn(_c(self.hostname, "Connection lost. Disconnecting."))
                 self.disconnect()
                 raise
 
-            self.logger.info(
-                _c(self.hostname,
-                   "Command executed successfully: '{}'".format(cmd)))
+            self.logger.info(_c(self.hostname, "Command executed successfully: '{}'".format(cmd)))
             output = self.ctrl.before
             # if output.startswith(cmd):
             #    remove first line which contains the command itself
@@ -221,8 +209,7 @@ class Connection(object):
             return output
 
         else:
-            raise ConnectionError(
-                "Device not connected", host=self.hostname)
+            raise ConnectionError("Device not connected", host=self.hostname)
 
     def send_xml(self, command):
         """
@@ -387,37 +374,26 @@ class Connection(object):
                 self.ctrl.sendline()
                 self.ctrl.setecho(True)
                 if wait_for_string:
-                    self.logger.debug(_c(
-                        self.hostname,
-                        "Waiting for string:'{}'".format(wait_for_string)))
-                    self._wait_for_string(wait_for_string, 3, timeout)
+                    self._wait_for_string(wait_for_string, timeout)
                 else:
                     self.wait_for_prompt(timeout)
 
             except CommandSyntaxError, e:
-                self.logger.error(_c(
-                    self.hostname,
-                    "Syntax error: '{}'".format(cmd)))
+                self.logger.error(_c(self.hostname, "Syntax error: '{}'".format(cmd)))
                 e.command = cmd
                 raise
 
             except CommandTimeoutError, e:
-                self.logger.error(_c(
-                    self.hostname,
-                    "Command timeout: '{}'".format(cmd)))
+                self.logger.error(_c(self.hostname, "Command timeout: '{}'".format(cmd)))
                 e.command = cmd
                 raise
 
             except ConnectionError:
-                self.logger.error(_c(
-                    self.hostname,
-                    "Connection Error: '{}'".format(cmd)))
+                self.logger.error(_c(self.hostname, "Connection Error: '{}'".format(cmd)))
                 raise
 
             except Exception, err:
-                self.logger.error(_c(
-                    self.hostname,
-                    "Exception: '{}'".format(err)))
+                self.logger.error(_c(self.hostname, "Exception: '{}'".format(err)))
                 raise ConnectionError(message=err, host=self.hostname)
 
     def _determine_config_mode(self, prompt):
@@ -428,15 +404,18 @@ class Connection(object):
         else:
             self.mode = 'global'
 
-        self.logger.debug(_c(
-            self.hostname,
-            "Mode: {}".format(self.mode)
-        ))
+        self.logger.debug(_c(self.hostname, "Mode: {}".format(self.mode)))
 
     def determine_hostname(self, prompt):
         self.logger.debug(_c(self.hostname, "Hostname detecting not implemented for generic driver"))
 
     # Actions for FSM
+
+    @action
+    def _expected_string_received(self, ctx):
+        ctx.finished = True
+        return True
+
     @action
     def _expected_prompt(self, ctx):
         prompt = self.ctrl.after
@@ -458,18 +437,41 @@ class Connection(object):
         ctx.ctrl.connected = False
         return True
 
+    @action
+    def print_before(self, ctx):
+        print(":".join("{:02x}".format(ord(c)) for c in ctx.ctrl.before))
+        print(ctx.ctrl.before)
+        print(self.compiled_prompts[-1].pattern.encode('string_escape'))
+
+    @action
+    def _stays_connected(self, ctx):
+        self.ctrl.connected = True
+        self.ctrl.last_hop = len(self.ctrl.hosts) - 1  # Authentication needed
+        self.ctrl.last_pattern = PRESS_RETURN
+        return True
+
+    @action
+    def _send_lf(self, ctx):
+        ctx.ctrl.send('\r')
+        return True
+
+    @action
+    def send_space(self, ctx):
+        ctx.ctrl.send(' ')
+        return True
+
     def wait_for_prompt(self, timeout=60):
 
         events = [self.command_syntax_re, self.connection_closed_re,
                   pexpect.TIMEOUT, pexpect.EOF, self.compiled_prompts[-1], self.press_return, self.more]
-        # add detected prompts chain
 
+        # add detected prompts chain
         events += self.compiled_prompts[:-1]  # without target prompt
 
         self.logger.debug(_c(self.hostname, "Waiting for prompt"))
 
         transitions = [
-            (self.command_syntax_re, [0], -1, CommandSyntaxError("Invalid input detected", self.hostname), 0),
+            (self.command_syntax_re, [0], -1, CommandSyntaxError("Command unknown", self.hostname), 0),
             # (self.connection_closed_re, [0], -1, self._connection_closed, 10),
             (self.connection_closed_re, [0], 1, None, 10),
             (pexpect.TIMEOUT, [0], -1, CommandTimeoutError("Timeout waiting for prompt", self.hostname), 0),
@@ -488,85 +490,35 @@ class Connection(object):
         sm = FSM("WAIT-4-PROMPT", self.ctrl, events, transitions, timeout=timeout)
         return sm.run()
 
-    @action
-    def print_before(self, ctx):
-        print(":".join("{:02x}".format(ord(c)) for c in ctx.ctrl.before))
-        print(ctx.ctrl.before)
-        print(self.compiled_prompts[-1].pattern.encode('string_escape'))
+    def _wait_for_string(self, expected_string, timeout=60):
 
-    @action
-    def _stays_connected(self, ctx):
-        self.ctrl.connected = True
-        self.ctrl.last_hop = len(self.ctrl.hosts) - 1  # Authentication needed
-        self.ctrl.last_pattern = PRESS_RETURN
-        return True
+        events = [self.command_syntax_re, self.connection_closed_re,
+                  pexpect.TIMEOUT, pexpect.EOF, expected_string, self.press_return, self.more]
 
-    def _wait_for_string(self, expected_string, max_attempts=3, timeout=60):
-        index = 0
-        state = 0
-        attempt = 0
-        while attempt < max_attempts + 1:
-            index = self.ctrl.expect_exact(
-                [expected_string, _INVALID_INPUT, _INCOMPLETE_COMMAND,
-                 pexpect.TIMEOUT,
-                 _CONNECTION_CLOSED, pexpect.EOF], timeout=timeout,
-                #searchwindowsize=len(expected_string)+10
-            )
-            self.logger.debug(_c(self.hostname,
-                             "INDEX={}, STATE={}, ATTEMPT={}".format(
-                                 index, state, attempt)))
-            if index == 0:
-                self.logger.debug(
-                    _c(self.hostname,
-                       "Received expected string: {}".format(expected_string)))
-                if state == 0:
-                    return
-                if state == 1:
-                    raise CommandSyntaxError(host=self.hostname)
+        # add detected prompts chain
+        events += self.compiled_prompts[:-1]  # without target prompt
 
-            if index == 1:
-                self.logger.warning(_c(self.hostname, "Invalid input detected"))
+        self.logger.debug(_c(self.hostname, "Waiting for string: '{}'".format(repr(expected_string))))
 
-                # command syntax error so wait for prompt again
-                state = 1
-                continue
+        transitions = [
+            (self.command_syntax_re, [0], -1, CommandSyntaxError("Command unknown", self.hostname), 0),
+            # (self.connection_closed_re, [0], -1, self._connection_closed, 10),
+            (self.connection_closed_re, [0], 1, None, 10),
+            (pexpect.TIMEOUT, [0], -1, CommandTimeoutError("Timeout waiting for string", self.hostname), 0),
+            #(pexpect.TIMEOUT, [0], -1, self.print_before, 0),
+            (pexpect.EOF, [0], -1, ConnectionError("Unexpected device disconnect", self.hostname), 0),
+            (pexpect.EOF, [1], -1, self._connection_closed, 0),
+            (self.more, [0], 0, self.send_space, 10),
+            # (self.more, [2], 0, None, 10),
+            (expected_string, [0], -1, self._expected_string_received, 0),
+            (self.press_return, [0], -1, self._stays_connected, 0)
+        ]
 
-            if index == 2:
-                self.logger.warning(_c(self.hostname, "Incomplete command"))
+        for prompt in self.compiled_prompts[:-1]:
+            transitions.append((prompt, [0, 1], 0, self._unexpected_prompt, 0))
 
-                # command syntax error so wait for prompt again
-                state = 1
-                continue
-
-            if index == 3:
-                self.logger.warning(
-                    _c(self.hostname,
-                       "Timeout waiting for '{}' ({}/{})".format(
-                           expected_string, attempt, max_attempts)))
-                # Trying to get prompt again
-                self.ctrl.sendline()
-
-            if index in [4, 5]:
-                raise ConnectionError(
-                    "Unexpected device disconnect", self.hostname)
-
-            attempt += 1
-        else:
-            self.logger.error(_c(self.hostname, "Unexpected response received"))
-            if index == 3:
-                raise ConnectionTimeoutError(host=self.hostname)
+        sm = FSM("WAIT-4-STR", self.ctrl, events, transitions, timeout=timeout)
+        return sm.run()
 
     def prepare_prompt(self):
         self.prompt = self.ctrl.detected_target_prompt
-        #self.compiled_prompt = re.compile(re.escape(self.ctrl.detected_target_prompt))
-        #self.prompt = re.compile("\$|>|#")
-
-    @action
-    def _send_lf(self, ctx):
-        ctx.ctrl.send('\r')
-        return True
-
-    @action
-    def send_space(self, ctx):
-        ctx.ctrl.send(' ')
-        return True
