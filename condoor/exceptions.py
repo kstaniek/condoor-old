@@ -88,8 +88,8 @@ class CommandError(GeneralError):
         message = self.message or self.__class__.__doc__
         message = "{}: '{}'".format(message, self.command) \
             if self.command else message
-        message = "{}: {}".format(self.host, message) \
-            if self.host else message
+        message = "{}: {}".format(self.hostname, message) \
+            if self.hostname else message
         return message
 
 
