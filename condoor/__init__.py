@@ -87,8 +87,12 @@ supported_platforms = {
     "ASR-901": {
         "version": ["ASR-901 "]
     },
+    "CRS": {
+        "version": ["CRS"],
+        "continue": True
+    },
     "CRS-16": {
-        "version": ["CRS-16 "]
+        "version": ["CRS-16 ", "CRS 16 "]
     }
 }
 
@@ -97,7 +101,7 @@ platform_families = {
     "NCS4K": ["NCS-4000"],
     "NCS6K": ["NCS-6000", "NCS-6008"],
     "ASR900": ["ASR-903", "ASR-901"],
-    "CRS": ["CRS-16"]
+    "CRS": ["CRS", "CRS-16"]
 }
 
 drivers = {
@@ -306,6 +310,7 @@ class Connection(object):
             # IOS Hack - need to check if show version brief is supported on IOS/IOSXE
             show_version = self._driver.send("show version", timeout=120)
 
+        self.logger.debug("show version: \n{}".format(show_version))
         show_diag_xr = None
 
         match = re.search("Version (.*)[ |\n]", show_version)
@@ -356,6 +361,8 @@ class Connection(object):
                 continue
             break
 
+        self.logger.debug("Platform string: {}".format(self._platform))
+
         self._prompt = self._driver.prompt
         self._driver.disconnect()
 
@@ -365,6 +372,7 @@ class Connection(object):
                 break
         else:
             self._family = 'generic'
+            raise GeneralError("Platform unsupported. Please provide show version to author")
 
         # getting the new driver based on detected device family
         self._init_driver()
@@ -421,7 +429,7 @@ class Connection(object):
 
         """
         self._set_default_log_fd(logfile)
-
+        self._init_driver()
         no_hosts = len(self._nodes)
         result = False
         for i in xrange(no_hosts):
