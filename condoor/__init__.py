@@ -226,6 +226,7 @@ class Connection(object):
         self._log_session = log_session
         self.logger = logging.getLogger('condoor')
         self._info = {}
+        self._is_console = False
 
         if log_level > 0:
             formatter = logging.Formatter('%(asctime)-15s %(levelname)8s: %(message)s')
@@ -299,6 +300,32 @@ class Connection(object):
 
         self._init_driver()
 
+    def _detect_console(self):
+        try:
+            output = self._driver.send("show users")
+        except CommandError:
+            self.logger("Command 'show users' not suported")
+            return False
+
+        for line in output.split('\n'):
+            if '*' in line:
+                break
+        else:
+            self.logger.debug("Connection port unknown")
+            return False
+
+        fields = line.split()
+
+        if 'vty' in fields[1]:
+            self.logger.debug("Detected connection to {}".format(fields[1]))
+            return False
+        elif 'con' in fields[1]:
+            self.logger.debug("Detected connection to {} on node {}".format(fields[1][:3], fields[1][3:]))
+            return True
+
+        self.logger.debug("Connection port unknown")
+        return False
+
     def discovery(self, logfile=None):
         """This method detects the device details. This method discovery the several device attributes.
 
@@ -314,7 +341,7 @@ class Connection(object):
         self._init_driver()
 
         no_hosts = len(self._nodes)
-        for i in xrange(no_hosts):
+        for _ in xrange(no_hosts):
             try:
                 self._driver.connect(logfile=self._session_fd)
                 break
@@ -329,7 +356,10 @@ class Connection(object):
             # IOS Hack - need to check if show version brief is supported on IOS/IOSXE
             show_version = self._driver.send("show version", timeout=120)
 
-        self.logger.debug("show version: \n{}".format(show_version))
+        match = re.search("^.*rocessor.*$", show_version, re.MULTILINE)
+        if match:
+            self.logger.debug("Platform string: {}".format(match.group()))
+
         show_diag_xr = None
 
         match = re.search("Version (.*)[ |\n]", show_version)
@@ -380,9 +410,10 @@ class Connection(object):
                 continue
             break
 
-        self.logger.debug("Platform string: {}".format(self._platform))
-
         self._prompt = self._driver.prompt
+
+        self._is_console = self._detect_console()
+
         self._driver.disconnect()
 
         for family, platforms in platform_families.iteritems():
@@ -405,6 +436,7 @@ class Connection(object):
         self.logger.info("OS: {}".format(self.os_type))
         self.logger.info("Version: {}".format(self.os_version))
         self.logger.info("Prompt: '{}'".format(self._prompt))
+        self.logger.info("Is connected to console: {}".format(self.is_console))
 
 
     def store_property(self, key, value):
@@ -581,3 +613,8 @@ class Connection(object):
             return self._driver.is_connected
         except AttributeError:
             return False
+
+    @property
+    def is_console(self):
+        """Returns *True* if the connection to the target device is over console port"""
+        return self._is_console
