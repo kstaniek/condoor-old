@@ -140,20 +140,39 @@ class Connection(object):
         chain of devices before reaching the target device. It allows to have single device connection
         over multiple jumphosts. For example::
 
-            ["ssh://<username>:<password>@<host>", "telnet://<username>:<password>@<host>"]
+            ["ssh://<user>:<password>@<host>", "telnet://<user>:<password>@<host>:<port>"]
 
-        Currently there are two protocols supported: SSH and TELNET
+        Currently there are two protocols supported: SSH and TELNET. The *port* is optional and if not specified
+        the well known default protocol port is used.
 
         An IOS/IOS XE devices may require a privileged level password (enable password). The url parser treats
         the rest of the url (the path part + query + fragment part) as an privileged password. For example::
 
-            ["ssh://<username>:<password>@<host>", "telnet://<username>:<password>@<host>/<enable_password>"]
+            ["ssh://<user>:<password>@<host>", "telnet://<user>:<password>@<host>/<enable_password>"]
 
         The *host* could be either the hostname or ip address.
 
-        There could be more devices in the list which allows having multiple jumphosts.
-        The last url in the list always represents the target device.
+        There could be more devices in the list representing the single or multiple jumphosts on the path
+        to the target device. The condoor connects to them in a sequence starting the next connection from the
+        previous host unless reaching the target device. The last url in the list is always the target device.
 
+        The *urls* parameter can be passed as a list of the list of urls. In that case condoor treats it as
+        a multiple alternative connections to the same device. During the connection or discovery phase condoor
+        starts with the first connection from the list and then move sequentially to next connection list in case of
+        the previous connection failure or timeout.
+        This process stops when the current connection to the target devices is successful.
+        The first successful connection is latched and stored in the connection class and next time when connection
+        to device is being reestablished the last successful connection list is used.
+        This feature is useful for providing the console connection to two processor cards of the same device.
+        It could be also used if the device has two alternative Mgmt interfaces with different IP addresses.
+        For example::
+
+                [["ssh://<user>:<password>@<host>", "telnet://<user>:<password>@<ts1:2015>"],
+                 ["ssh://<user>:<password>@<host>", "telnet://<user>:<password>@<ts1:2016>"]]
+
+        In above example the *ursl* parameter represents two alternative connection lists. First is through
+        terminal server on port 2015 and second through the same terminal server on port 2016.
+        Both connections uses the same jumphost.
 
         The *log_dir* parameter contains a string representing the full path to the logging directory.
         The logging directory can store the device session log and the detailed Condoor debug log.
