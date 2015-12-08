@@ -194,7 +194,7 @@ class FSM(object):
                         ctx.event, ctx.state, timeout, finish_time))
                     if callable(action):
                         if not action(ctx):
-                            self._dbg(10, "Error: {}".format(ctx.msg))
+                            self._dbg(50, "Error: {}".format(ctx.msg))
                             return False
                     elif isinstance(action, Exception):
                         raise action
@@ -210,7 +210,7 @@ class FSM(object):
                     self._dbg(10, "NS={},NT={}".format(next_state, timeout))
 
                 else:
-                    self._dbg(10, "Unknown transition: EVENT={},STATE={}".format(ctx.event, ctx.state))
+                    self._dbg(40, "Unknown transition: EVENT={},STATE={}".format(ctx.event, ctx.state))
                     continue
 
             except EOF:
