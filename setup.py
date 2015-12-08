@@ -63,13 +63,13 @@ NAME = 'condoor'
 
 setup(
     name=NAME,
-    version='0.0.5',
+    version='0.0.6',
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     author='Klaudiusz Staniek',
     author_email='klstanie [at] cisco.com',
     url='https://github.com/kstaniek/condoor',
-    download_url='https://github.com/kstaniek/condoor/tarball/0.0.5',
+    download_url='https://github.com/kstaniek/condoor/tarball/0.0.6',
     keywords='cisco,automation',
     tests_require=['tox', 'pytest'],
     platforms=['any'],
