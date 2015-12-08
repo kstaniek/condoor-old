@@ -169,8 +169,8 @@ class Connection(object):
                 [["ssh://<user>:<password>@<host>", "telnet://<user>:<password>@<ts1:2015>"],
                  ["ssh://<user>:<password>@<host>", "telnet://<user>:<password>@<ts1:2016>"]]
 
-        In above example the *ursl* parameter represents two alternative connection lists. First is through
-        terminal server on port 2015 and second through the same terminal server on port 2016.
+        In above example the *urls* parameter represents two alternative connection lists. First goes through
+        terminal server on port 2015 and second goes through the same terminal server on port 2016.
         Both connections uses the same jumphost.
 
         The *log_dir* parameter contains a string representing the full path to the logging directory.
