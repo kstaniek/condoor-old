@@ -138,7 +138,7 @@ class FSM(object):
         self.timeout = timeout
         self.name = name
         self.init_pattern = init_pattern
-        self.logger = logging.getLogger(self.ctrl.hostname)
+        self.logger = logging.getLogger('condoor.fsm')
 
         self.transition_table = self._compile(transitions, events)
 
