@@ -33,13 +33,10 @@ import pexpect
 
 from threading import Lock
 
-from ..utils import to_list
 from ..exceptions import \
     ConnectionError,\
-    ConnectionTimeoutError, \
     CommandSyntaxError, \
-    CommandTimeoutError, \
-    GeneralError
+    CommandTimeoutError
 
 from ..controllers.fsm import FSM, action
 
@@ -52,10 +49,6 @@ _PROMPT_XML = 'XML> '
 _INVALID_INPUT = "Invalid input detected"
 _INCOMPLETE_COMMAND = "Incomplete command."
 _CONNECTION_CLOSED = "Connection closed"
-
-#_PROMPT_IOSXR_RE = re.compile('(\w+/\w+/\w+/\w+:.*?)(\([^()]*\))?#')
-#_PROMPT_IOS_RE = re.compile('\w+>|\w+#')
-
 
 prompt_patterns = {
     'IOSXR': re.compile('(RP/\d+/RS?P[0-1]/CPU[0-3]:.*?)(\([^()]*\))?#'),
@@ -243,7 +236,6 @@ class Connection(object):
         self.logger.info(_c(self.hostname, "XML TTY Agent started"))
 
         self.ctrl.send(command)
-        #self.ctrl.expect("]]>]]>")
         self.ctrl.send("\r\n")
         self.ctrl.expect("]]>]]>")
         result = self.ctrl.before
@@ -261,7 +253,7 @@ class Connection(object):
         """
         self.logger.info("Ignoring. Not supported on this platform")
 
-    def reload(self):
+    def reload(self, rommon_boot_command="boot"):
         """This method reloads the device and waits for device to boot up. It post the informational message to the
         log if not implemented by device driver."""
 
@@ -475,11 +467,9 @@ class Connection(object):
             # (self.connection_closed_re, [0], -1, self._connection_closed, 10),
             (self.connection_closed_re, [0], 1, None, 10),
             (pexpect.TIMEOUT, [0], -1, CommandTimeoutError("Timeout waiting for prompt", self.hostname), 0),
-            #(pexpect.TIMEOUT, [0], -1, self.print_before, 0),
             (pexpect.EOF, [0], -1, ConnectionError("Unexpected device disconnect", self.hostname), 0),
             (pexpect.EOF, [1], -1, self._connection_closed, 0),
             (self.more, [0], 0, self.send_space, 10),
-            # (self.more, [2], 0, None, 10),
             (self.compiled_prompts[-1], [0], -1, self._expected_prompt, 0),
             (self.press_return, [0], -1, self._stays_connected, 0)
         ]
@@ -505,7 +495,6 @@ class Connection(object):
             # (self.connection_closed_re, [0], -1, self._connection_closed, 10),
             (self.connection_closed_re, [0], 1, None, 10),
             (pexpect.TIMEOUT, [0], -1, CommandTimeoutError("Timeout waiting for string", self.hostname), 0),
-            #(pexpect.TIMEOUT, [0], -1, self.print_before, 0),
             (pexpect.EOF, [0], -1, ConnectionError("Unexpected device disconnect", self.hostname), 0),
             (pexpect.EOF, [1], -1, self._connection_closed, 0),
             (self.more, [0], 0, self.send_space, 10),

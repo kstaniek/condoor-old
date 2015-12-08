@@ -31,7 +31,6 @@ import os
 import re
 import logging
 import time
-from functools import wraps
 
 from hopinfo import make_hop_info_from_url
 from controllers.pexpect_ctrl import Controller
@@ -411,9 +410,7 @@ class Connection(object):
             break
 
         self._prompt = self._driver.prompt
-
         self._is_console = self._detect_console()
-
         self._driver.disconnect()
 
         for family, platforms in platform_families.iteritems():
@@ -437,7 +434,6 @@ class Connection(object):
         self.logger.info("Version: {}".format(self.os_version))
         self.logger.info("Prompt: '{}'".format(self._prompt))
         self.logger.info("Is connected to console: {}".format(self.is_console))
-
 
     def store_property(self, key, value):
         """This method stores a *value* identified by the *key* in the :class:`Connection` object.

@@ -1,5 +1,4 @@
 # =============================================================================
-# utils
 #
 # Copyright (c)  2015, Cisco Systems
 # All rights reserved.
@@ -89,11 +88,10 @@ def is_reachable(host, port=23):
 
     for family, socktype, proto, cannonname, sockaddr in addresses:
         sock = socket.socket(family, socket.SOCK_STREAM)
-        #sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
         sock.settimeout(5)
         try:
             sock.connect(sockaddr)
-        except IOError as e:
+        except IOError:
             continue
 
         sock.shutdown(socket.SHUT_RDWR)

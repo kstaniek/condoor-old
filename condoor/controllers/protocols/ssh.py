@@ -42,7 +42,6 @@ PROTOCOL_DIFFER = "Protocol major versions differ"
 NEWSSHKEY = "fingerprint is"
 KNOWN_HOSTS = "added.*to the list of known hosts"
 HOST_KEY_FAILED = "key verification failed"
-#COULD_NOT_RESOLVE = "Could not resolve hostname"
 
 
 class SSH(Protocol):
@@ -79,16 +78,15 @@ class SSH(Protocol):
             more = "!@#!@#"  # find another solution
             password_prompt = PASSWORD_PROMPT
 
-
         events = [password_prompt, UNABLE_TO_CONNECT, RESET_BY_PEER,
                   NEWSSHKEY, KNOWN_HOSTS, HOST_KEY_FAILED, MODULUS_TOO_SMALL, PROTOCOL_DIFFER,
                   pexpect.TIMEOUT]
 
         transitions = [
             (password_prompt, [0, 1, 4], -1, self.save_pattern, 0),
-            #cover all messages indicating that connection was not set up
+            #  cover all messages indicating that connection was not set up
             (UNABLE_TO_CONNECT, [0], -1, self.unable_to_connect, 0),
-            #not sure when it happens - saw if there was session timeout on router
+            #  not sure when it happens - saw if there was session timeout on router
             (RESET_BY_PEER, [0], -1, self.unable_to_connect, 0),
             (NEWSSHKEY, [0], 1, self.send_yes, 10),
             (KNOWN_HOSTS, [1], 0, None, 0),

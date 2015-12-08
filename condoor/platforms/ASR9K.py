@@ -48,7 +48,6 @@ class Connection(generic.Connection):
                                    "\% Ambiguous command:|"
                                    "\% Invalid input detected")
 
-    #platform_prompt = prompt_patterns[platform] #  re.compile('(\w+/\w+/\w+/\w+:.*?)(\([^()]*\))?#')
     platform_prompt = generic.prompt_patterns['IOSXR']
 
     password_prompt = re.compile("[Pp]assword: ")
@@ -82,7 +81,7 @@ class Connection(generic.Connection):
     def boot(self):
         pass
 
-    def enable(self):
+    def enable(self, enable_password=None):
         pass
 
     def reload(self, rommon_boot_command="boot"):
@@ -105,7 +104,7 @@ class Connection(generic.Connection):
         CONFIGURATION_COMPLETED = re.compile("SYSTEM CONFIGURATION COMPLETED")
         CONFIGURATION_IN_PROCESS = re.compile("SYSTEM CONFIGURATION IN PROCESS")
         # CONSOLE = re.compile("ios con0/RSP0/CPU0 is now available"))
-        CONSOLE = re.compile("ios con[0|1]\/RS?P[0-1]\/CPU0 is now available")
+        CONSOLE = re.compile("ios con[0|1]/RS?P[0-1]/CPU0 is now available")
         RELOAD_NA = re.compile("Reload to the ROM monitor disallowed from a telnet line")
 
         # FIXME: Not sure need to set echo to false

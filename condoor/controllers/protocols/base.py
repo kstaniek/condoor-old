@@ -39,17 +39,14 @@ from ...exceptions import \
 
 from ..fsm import action
 
-#INVALID_INPUT = "Invalid input detected"
 
 # used for unix jumphosts
 PASSWORD_PROMPT = re.compile("[P|p]assword:\s?")
 USERNAME_PROMPT = re.compile("([U|u]sername:|login:)\s?")
 SHELL_PROMPT = re.compile("\$\s?|>\s?|#\s?|\%\s?")
 
-#XR_PROMPT = re.compile('(\w+/\w+/\w+/\w+:.*?)(\([^()]*\))?#')
 PERMISSION_DENIED = "Permission denied"
 AUTH_FAILED = "Authentication failed|not authorized|Login incorrect"
-#CONNECTION_REFUSED = "Connection refused"
 RESET_BY_PEER = "reset by peer|closed by foreign host"
 RECONFIGURE_USERNAME_PROMPT = "[Nn][Oo] root-system username is configured"
 SET_USERNAME = "[Ee]nter.*username:"
@@ -57,12 +54,6 @@ SET_PASSWORD = "Enter secret"
 PASSWORD_OK = "[Pp]assword [Oo][Kk]"
 PRESS_RETURN = "Press RETURN to get started\."
 STANDBY_CONSOLE = "Standby console disabled"
-
-
-
-
-#PROMPT = re.compile('\r\n.*[\$|\#|\>|\%].?', re.DOTALL)
-#PROMPT = re.compile('\r\n.+[\$|\#|\>].?')
 
 # Error when the hostname can't be resolved or there is
 # network reachability timeout
@@ -166,12 +157,6 @@ class Protocol(object):
                 # \r=0x0d CR \n=0x0a LF
                 if p not in ['\n', '\r']:  # omit the cr/lf sent to get the prompt
                     timeout = inter_char_timeout
-                #else:
-                #    if p == '\n':
-                #        print("\\n")
-                #    if p == '\r':
-                #        print("\\r")
-
                 expired = time.time() - begin
                 prompt += p
             except pexpect.TIMEOUT:
@@ -179,14 +164,14 @@ class Protocol(object):
             except pexpect.EOF:
                 raise ConnectionError('Session disconnected')
 
-        #print("expired:{},total:{}".format(expired, total_timeout))
-        #print(":".join("{:02x}".format(ord(c)) for c in prompt))
-        #print("PROMPTRAW: {}".format(repr(prompt)))
-        #print prompt.split('\r')
-        #print prompt.strip()
-        #prompt = prompt.split('\r')[-1].strip()
+        #  print("expired:{},total:{}".format(expired, total_timeout))
+        #  print(":".join("{:02x}".format(ord(c)) for c in prompt))
+        #  print("RAW: {}".format(repr(prompt)))
+        #  print prompt.split('\r')
+        #  print prompt.strip()
+        #  prompt = prompt.split('\r')[-1].strip()
         prompt = prompt.strip()
-        #print("PROMPT: '%s'" % prompt)
+        #  print("PROMPT: '%s'" % prompt)
         return prompt
 
     def levenshtein_distance(self, a, b):
@@ -223,24 +208,7 @@ class Protocol(object):
         with a low sync_multiplier. Best case sync time gets worse with a
         high sync multiplier (500 ms with default).
 
-        :param sync_multiplier:
-        :return:
         """
-        # All of these timing pace values are magic.
-        # I came up with these based on what seemed reliable for
-        # connecting to a heavily loaded machine I have.
-        #self.ctrl.setecho(False)
-        #self.ctrl.sendline()
-        #self.ctrl.sendline()
-        #self.ctrl.sendline()
-        #time.sleep(0.5)
-
-        #try:
-        #    # Clear the buffer before getting the prompt.
-        #    self.try_read_prompt(5)
-        #except pexpect.TIMEOUT:
-        #    pass
-
         self.ctrl.sendline()
         self.try_read_prompt(sync_multiplier)
 
@@ -248,8 +216,7 @@ class Protocol(object):
         max_attempts = 10
         while attempt < max_attempts:
             attempt += 1
-            self._dbg(10, "Detecting prompt. Attempt ({}/{})".format(
-                attempt, max_attempts))
+            self._dbg(10, "Detecting prompt. Attempt ({}/{})".format(attempt, max_attempts))
 
             self.ctrl.sendline()
             a = self.try_read_prompt(sync_multiplier)
@@ -344,7 +311,7 @@ class Protocol(object):
 
     @action
     def send_new_line(self, ctx):
-        #print(":".join("{:02x}".format(ord(c)) for c in ctx.ctrl.before))
+        # print(":".join("{:02x}".format(ord(c)) for c in ctx.ctrl.before))
         ctx.ctrl.send("\r\n")
         return True
 

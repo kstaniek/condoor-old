@@ -50,7 +50,6 @@ class Connection(generic.Connection):
                                    '\% Ambiguous command:.*"|'
                                    '\% Type "show \?" for a list of subcommands')
 
-    #platform_prompt = re.compile('.*[#|>]')
     platform_prompt = generic.prompt_patterns['IOS']
 
     password_prompt = re.compile("Password: ")
@@ -87,7 +86,7 @@ class Connection(generic.Connection):
         self.send('terminal len 0')
         self.send('terminal width 0')
 
-    def reload(self, save_config):
+    def reload(self, save_config=True):
         """
         CSM_DUT#reload
 
@@ -100,9 +99,7 @@ class Connection(generic.Connection):
 
     def enable(self, enable_password=None):
         ENABLE = "enable"
-        #self.ctrl.setecho(False)
         self.ctrl.send("enable")
-
         prompt = self.compiled_prompts[-1]
 
         events = [ENABLE, self.password_prompt, prompt, pexpect.TIMEOUT, pexpect.EOF]

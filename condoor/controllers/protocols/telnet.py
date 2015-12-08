@@ -38,12 +38,6 @@ from ...exceptions import \
 ESCAPE_CHAR = "Escape character is|Open"
 # Connection refused i.e. line busy on TS
 CONNECTION_REFUSED = re.compile("Connection refused")
-#CONNECTION_UNREACHABLE = "unreachable"
-#CONNECTION_TIMEOUT = "timed out"
-# Console connection
-#PRESS_RETURN = "Press RETURN to get started"
-
-
 
 
 class Telnet(Protocol):
@@ -73,9 +67,10 @@ class Telnet(Protocol):
             more = "!@#!@#"  # find another solution
             password_prompt = PASSWORD_PROMPT
             username_prompt = USERNAME_PROMPT
-
-        events = [ESCAPE_CHAR, PRESS_RETURN, STANDBY_CONSOLE, username_prompt, password_prompt, more, prompt, rommon_prompt,
-                  UNABLE_TO_CONNECT, RESET_BY_PEER, pexpect.TIMEOUT]
+        #              0            1               2                3              4            5      6
+        events = [ESCAPE_CHAR, PRESS_RETURN, STANDBY_CONSOLE, username_prompt, password_prompt, more, prompt,
+                  #     7                8                 9               10
+                  rommon_prompt, UNABLE_TO_CONNECT, RESET_BY_PEER, pexpect.TIMEOUT]
 
         transitions = [
             (ESCAPE_CHAR, [0], 1, None, 20),
@@ -86,7 +81,7 @@ class Telnet(Protocol):
             (more, [0, 5], 7, self.send_q, 10),
             # router sends it again to delete
             (more, [7], 8, None, 10),
-            #(prompt, [0, 1, 5], 6, self.send_new_line, 10),
+            # (prompt, [0, 1, 5], 6, self.send_new_line, 10),
             (prompt, [0, 1, 5], 0, None, 10),
             (prompt, [6, 8, 5], -1, self.save_pattern, 0),
             (rommon_prompt, [0, 1], -1, self.save_pattern, 0),

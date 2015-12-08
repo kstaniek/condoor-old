@@ -44,15 +44,7 @@ import pexpect
 @delegate("_session", ("expect", "expect_exact", "sendline",
                        "isalive", "sendcontrol", "send", "read_nonblocking", "setecho"))
 class Controller(object):
-
-    def __init__(self,
-                 platform,
-                 hostname,
-                 hosts,
-                 account_manager=None,
-                 max_attempts=1,
-                 logfile=None):
-
+    def __init__(self, platform, hostname, hosts, account_manager=None, max_attempts=1, logfile=None):
         self.hosts = to_list(hosts)
         self.max_attempts = max_attempts
         self.account_mgr = account_manager
@@ -66,9 +58,7 @@ class Controller(object):
         self.is_target = False
         self.last_hop = 0
         self.last_pattern = None
-
         self.logger = logging.getLogger("condoor.controller")
-
         self._clear_detected_prompts()
 
     @property
@@ -122,16 +112,11 @@ class Controller(object):
             attempt = 1
             while attempt <= self.max_attempts:
                 if not host.is_reachable():
-                    self._dbg(40, "[{}] {}: Host not reachable".format(
-                        hop, host.hostname)
-                    )
+                    self._dbg(40, "[{}] {}: Host not reachable".format(hop, host.hostname))
                 else:
                     self._dbg(
                         10,
-                        "[{}] {}: Connecting. Attempt ({}/{})".format(
-                            hop, host.hostname,
-                            attempt, self.max_attempts
-                        )
+                        "[{}] {}: Connecting. Attempt ({}/{})".format(hop, host.hostname, attempt, self.max_attempts)
                     )
                     try:
                         if self.is_target:
@@ -139,14 +124,7 @@ class Controller(object):
                         else:
                             self._dbg(10, "[{}] {}: Connecting to jump host".format(hop, host.hostname))
 
-                        protocol = make_protocol(
-                            self,
-                            host,
-                            spawn,
-                            self.account_mgr,
-                            self.session_log
-                        )
-
+                        protocol = make_protocol(self, host, spawn, self.account_mgr, self.session_log)
                         if protocol.connect():
                             if protocol.authenticate(self.detected_prompts[hop]):
                                 connected = True
@@ -161,28 +139,16 @@ class Controller(object):
 
                     if connected:
                         self.detected_prompts[hop] = protocol.prompt
-                        #host.prompt = protocol.prompt # duplicate
                         break
 
                 attempt += 1
                 sleep(2)
             else:
-                self._dbg(
-                    40,
-                    "[{}] {}: Connection error. "
-                    "Max attempts reached.".format(
-                        hop, host.hostname
-                    )
-                )
+                self._dbg(40, "[{}] {}: Connection error. ""Max attempts reached.".format(hop, host.hostname))
                 self.disconnect()
                 raise ConnectionError(host=self.hostname)
 
-            self._dbg(
-                10,
-                "[{}] {}: Connected successfully".format(
-                    hop, host.hostname
-                )
-            )
+            self._dbg(10, "[{}] {}: Connected successfully".format(hop, host.hostname))
 
         if connected:
             self._dbg(10, "Connected target device")

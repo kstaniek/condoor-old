@@ -1,5 +1,4 @@
 # =============================================================================
-# accountmgr.py
 #
 # Copyright (c)  2015, Cisco Systems
 # All rights reserved.
@@ -33,7 +32,7 @@ import fnmatch
 
 try:
     import keyring
-except:
+except ImportError:
     pass
 
 
@@ -100,26 +99,16 @@ class AccountManager(object):
         if password is None and interact:
             prompt = "{}@{} Password: ".format(username, realm)
             password = self.password_cb(prompt)
-            self.set_password(
-                make_realm(section),
-                username,
-                password)
-
-        #config.set(device_name, 'username', username)
-        #config.write(open(self.config_file, 'w'))
+            self.set_password(make_realm(section), username, password)
         return password
 
     def set_password(self, realm, username, password):
         try:
-            keyring.set_password(
-                realm,
-                username,
-                password
-            )
+            keyring.set_password(realm, username, password)
         except:
             pass
 
     def get_login(self, realm):
         username = self.get_username(realm)
         password = self.get_password(realm, username)
-        return (username, password)
+        return username, password
