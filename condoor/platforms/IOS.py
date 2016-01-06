@@ -80,7 +80,7 @@ class Connection(generic.Connection):
         result = re.search(r"^(.*)#", prompt)
         if result:
             self.hostname = result.group(1)
-            self.logger.debug("Hostname detected: {}".format(self.hostname))
+            self._debug("Hostname detected: {}".format(self.hostname))
 
     def prepare_terminal_session(self):
         self.send('terminal len 0')

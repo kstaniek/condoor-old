@@ -34,7 +34,9 @@ import pexpect
 
 from ..exceptions import \
     ConnectionError,\
-    ConnectionAuthenticationError
+    ConnectionAuthenticationError, \
+    CommandSyntaxError, \
+    CommandTimeoutError
 
 from ..controllers.fsm import FSM, action
 
@@ -76,7 +78,7 @@ class Connection(generic.Connection):
         result = re.search(r":(.*)#", prompt)
         if result:
             self.hostname = result.group(1)
-            self.logger.debug("Hostname detected: {}".format(self.hostname))
+            self._debug("Hostname detected: {}".format(self.hostname))
 
     def boot(self):
         pass
@@ -134,6 +136,37 @@ class Connection(generic.Connection):
 
         fs = FSM("RELOAD", self.ctrl, events, transitions, timeout=10)
         return fs.run()
+
+    def wait_for_prompt(self, timeout=60):
+        # ASR with IOSXR specific error when cmd is longer than 256 characters
+        _BUFFER_OVERFLOW = "input buffer overflow"
+        events = [self.command_syntax_re, self.connection_closed_re,
+                  pexpect.TIMEOUT, pexpect.EOF, self.compiled_prompts[-1], self.press_return, self.more,
+                  _BUFFER_OVERFLOW]
+
+        # add detected prompts chain
+        events += self.compiled_prompts[:-1]  # without target prompt
+
+        self._debug("Waiting for prompt")
+
+        transitions = [
+            (self.command_syntax_re, [0], -1, CommandSyntaxError("Command unknown", self.hostname), 0),
+            # (self.connection_closed_re, [0], -1, self._connection_closed, 10),
+            (self.connection_closed_re, [0], 1, None, 10),
+            (pexpect.TIMEOUT, [0], -1, CommandTimeoutError("Timeout waiting for prompt", self.hostname), 0),
+            (pexpect.EOF, [0], -1, ConnectionError("Unexpected device disconnect", self.hostname), 0),
+            (pexpect.EOF, [1], -1, self._connection_closed, 0),
+            (self.more, [0], 0, self._send_space, 10),
+            (self.compiled_prompts[-1], [0], -1, self._expected_prompt, 0),
+            (self.press_return, [0], -1, self._stays_connected, 0),
+            (_BUFFER_OVERFLOW, [0], -1, CommandSyntaxError("Command too long", self.hostname), 0)
+        ]
+
+        for prompt in self.compiled_prompts[:-1]:
+            transitions.append((prompt, [0, 1], 0, self._unexpected_prompt, 0))
+
+        sm = FSM("WAIT-4-PROMPT", self.ctrl, events, transitions, timeout=timeout)
+        return sm.run()
 
     @action
     def _send_boot(self, ctx):
