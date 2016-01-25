@@ -66,7 +66,7 @@ class Connection(object):
     connection_closed_re = re.compile("Connection closed")
     rommon_prompt = re.compile("rommon.*>")
     # platform_prompt = re.compile('[\r\n][\r\n]((\w+/\w+/\w+/\w+:.*?)(\([^()]*\))?#|.*?[#|>])')
-    platform_prompt = re.compile('[\w\-]+[#|>]')
+    platform_prompt = re.compile('[\w\-]+[#>]')
 
     password_prompt = re.compile("[P|p]assword:\s?")
     username_prompt = re.compile("([U|u]sername:\s|login:\s?)")
