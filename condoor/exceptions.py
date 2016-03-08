@@ -101,5 +101,3 @@ class CommandSyntaxError(CommandError):
 class CommandTimeoutError(CommandError):
     """Command timeout error"""
     pass
-
-

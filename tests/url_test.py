@@ -1,7 +1,6 @@
 # =============================================================================
-# url_test
 #
-# Copyright (c)  2014, Cisco Systems
+# Copyright (c)  2016, Cisco Systems
 # All rights reserved.
 #
 # # Author: Klaudiusz Staniek
@@ -27,8 +26,6 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-import sys
-import pytest
 
 from condoor.hopinfo import make_hop_info_from_url
 
@@ -75,7 +72,7 @@ class TestClass:
         hop_info = make_hop_info_from_url(url)
         assert hop_info.protocol == 'telnet'
         assert hop_info.username == 'user'
-        assert hop_info.password == None
+        assert hop_info.password is None
         assert hop_info.hostname == '1.1.1.1'
         assert hop_info.port == 2048
 
@@ -92,11 +89,10 @@ class TestClass:
         url = "telnet://1.1.1.1:2048"
         hop_info = make_hop_info_from_url(url)
         assert hop_info.protocol == 'telnet'
-        assert hop_info.username == None
-        assert hop_info.password == None
+        assert hop_info.username is None
+        assert hop_info.password is None
         assert hop_info.hostname == '1.1.1.1'
         assert hop_info.port == 2048
-
 
     def test_url_ssh(self):
         url = "ssh://user:pass@1.1.1.1"
@@ -139,7 +135,7 @@ class TestClass:
         hop_info = make_hop_info_from_url(url)
         assert hop_info.protocol == 'ssh'
         assert hop_info.username == 'user'
-        assert hop_info.password == None
+        assert hop_info.password is None
         assert hop_info.hostname == '1.1.1.1'
         assert hop_info.port == 2048
 
@@ -156,8 +152,8 @@ class TestClass:
         url = "ssh://1.1.1.1:2048"
         hop_info = make_hop_info_from_url(url)
         assert hop_info.protocol == 'ssh'
-        assert hop_info.username == None
-        assert hop_info.password == None
+        assert hop_info.username is None
+        assert hop_info.password is None
         assert hop_info.hostname == '1.1.1.1'
         assert hop_info.port == 2048
 
@@ -165,18 +161,18 @@ class TestClass:
         url = "ssh://1.1.1.1:2048"
         hop_info = make_hop_info_from_url(url)
         assert hop_info.protocol == 'ssh'
-        assert hop_info.username == None
-        assert hop_info.password == None
+        assert hop_info.username is None
+        assert hop_info.password is None
         assert hop_info.hostname == '1.1.1.1'
         assert hop_info.port == 2048
-        assert hop_info.enable_password == None
+        assert hop_info.enable_password is None
 
     def test_url_telnet_no_user_password_and_enable(self):
         url = "telnet://1.1.1.1:2048/!@#$%^&*()1/2345678asdfgh"
         hop_info = make_hop_info_from_url(url)
         assert hop_info.protocol == 'telnet'
-        assert hop_info.username == None
-        assert hop_info.password == None
+        assert hop_info.username is None
+        assert hop_info.password is None
         assert hop_info.hostname == '1.1.1.1'
         assert hop_info.port == 2048
         assert hop_info.enable_password == "!@#$%^&*()1/2345678asdfgh"
@@ -185,8 +181,8 @@ class TestClass:
         url = "telnet://1.1.1.1/!@#$%^&*()1/2345678asdfgh"
         hop_info = make_hop_info_from_url(url)
         assert hop_info.protocol == 'telnet'
-        assert hop_info.username == None
-        assert hop_info.password == None
+        assert hop_info.username is None
+        assert hop_info.password is None
         assert hop_info.hostname == '1.1.1.1'
         assert hop_info.port == 23
         assert hop_info.enable_password == "!@#$%^&*()1/2345678asdfgh"
@@ -195,8 +191,8 @@ class TestClass:
         url = "telnet://1.1.1.1,2.2.2.2:23,34/!@#$%^&*()1/2345678asdfgh"
         hop_info = make_hop_info_from_url(url)
         assert hop_info.protocol == 'telnet'
-        assert hop_info.username == None
-        assert hop_info.password == None
+        assert hop_info.username is None
+        assert hop_info.password is None
         assert hop_info.hostname == '1.1.1.1,2.2.2.2'
-        assert hop_info.port == 23,24
+        assert hop_info.port == 23, 24
         assert hop_info.enable_password == "!@#$%^&*()1/2345678asdfgh"

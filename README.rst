@@ -7,7 +7,7 @@ It supports keyring for password management and multiple jump hosts.
 Installation
 ------------
 
-The module can be installed from source using::
+The module can be installed from the source using::
 
     python setup.py install
 

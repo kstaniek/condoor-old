@@ -51,58 +51,6 @@ __all__ = ['make_connection_from_urls', 'Connection', 'FSM', 'TIMEOUT', 'action'
            'CommandTimeoutError', 'ConnectionError', 'ConnectionTimeoutError', 'CommandError',
            'CommandSyntaxError', 'ConnectionAuthenticationError']
 
-supported_platforms = {
-    "ASR-9000": {  # generic
-                   "version": ["ASR9K "],
-                   "continue": True
-    },
-    "ASR-9904": {
-        "version": ["ASR-9904 "],
-        "diag_eXR": ["ASR-9904 "]
-    },
-    "ASR-9010": {
-        "version": ["ASR 9010 ", "ASR-9010 "]  # yes, we've got two different chassis ID for the same platform
-    },
-    "ASR-9006": {
-        "version": ["ASR 9006 "]
-    },
-    "ASR-9001": {
-        "version": ["ASR-9001 "]
-    },
-    "NCS-4000": {  # generic
-                   "version": ["NCS-4000 "],
-                   "continue": True
-    },
-    "NCS-6000": {  # generic
-                   "version": ["NCS-6000 "],
-                   "continue": True
-    },
-    "NCS-6008": {
-        "diag_eXR": ["NCS 6008 "]
-    },
-    "ASR-903": {
-        "version": ["ASR-903 "]
-    },
-    "ASR-901": {
-        "version": ["ASR-901 "]
-    },
-    "CRS": {
-        "version": ["CRS"],
-        "continue": True
-    },
-    "CRS-16": {
-        "version": ["CRS-16 ", "CRS 16 "]
-    }
-}
-
-platform_families = {
-    "ASR9K": ["ASR-9000", "ASR-9904", "ASR-9010", "ASR-9006", "ASR-9001"],
-    "NCS4K": ["NCS-4000"],
-    "NCS6K": ["NCS-6000", "NCS-6008"],
-    "ASR900": ["ASR-903", "ASR-901"],
-    "CRS": ["CRS", "CRS-16"]
-}
-
 drivers = {
     "ASR9K": ["ASR9K", "CRS", "NCS6K", "NCS4K"],
     "IOS": ["ASR900"],
@@ -110,20 +58,13 @@ drivers = {
 
 }
 
-# def make_connection_from_urls(name, urls, platform='generic', account_manager=None, logger=None):
-#     if logger is None:
-#         logger = logging.getLogger(name)
-#         logger.addHandler(logging.NullHandler())
-#
-#     module_str = 'condoor.platforms.%s' % platform
-#     try:
-#         __import__(module_str)
-#         module = sys.modules[module_str]
-#         driver_class = getattr(module, 'Connection')
-#     except ImportError:
-#         raise GeneralError("Platform {} not supported".format(platform))
-#
-#     return driver_class(name, nodes, Controller, logger, account_manager=account_manager)
+os_names = {
+    'IOS': 'IOS',
+    'XR': 'IOS XR',
+    'eXR': 'IOS XR 64 bit',
+    'XE': 'IOS XE',
+    'NXOS': 'NXOS',
+}
 
 
 @delegate("_driver", ("reload", "send", "enable", "run_fsm"))
@@ -227,6 +168,14 @@ class Connection(object):
         self._info = {}
         self._is_console = False
 
+        self._udi = {
+            "name": "",
+            "description": "",
+            "pid": "",
+            "vid": "",
+            "sn": ""
+        }
+
         if log_level > 0:
             formatter = logging.Formatter('%(asctime)-15s %(levelname)8s: %(message)s')
             if log_dir:
@@ -247,6 +196,8 @@ class Connection(object):
         else:
             handler = logging.NullHandler()
 
+        handler = handler
+
         self.logger.addHandler(handler)
         self.logger.setLevel(log_level)
 
@@ -265,13 +216,7 @@ class Connection(object):
             else:
                 self._session_fd = logfile if isinstance(logfile, file) else None
 
-    def _init_driver(self, driver_name=None):
-        if driver_name is None:
-            for driver_name, families in drivers.iteritems():
-                if self._family in families:
-                    break
-            else:
-                driver_name = 'generic'
+    def _init_driver(self, driver_name='generic'):
 
         module_str = 'condoor.platforms.%s' % driver_name
         try:
@@ -355,13 +300,16 @@ class Connection(object):
             # IOS Hack - need to check if show version brief is supported on IOS/IOSXE
             show_version = self._driver.send("show version", timeout=120)
 
-        match = re.search("^.*rocessor.*$", show_version, re.MULTILINE)
+        match = re.search("^cisco (.*?) ", show_version, re.MULTILINE)
         if match:
             self.logger.debug("Platform string: {}".format(match.group()))
+            self._family = match.group(1)
+        else:
+            self._family = 'generic'
 
-        show_diag_xr = None
+        self._update_udi()
 
-        match = re.search("Version (.*)[ |\n]", show_version)
+        match = re.search("Version (.*?)(?:\[| |$)", show_version, re.MULTILINE)
         if match:
             self._os_version = match.group(1)
 
@@ -376,53 +324,11 @@ class Connection(object):
             if match:
                 self._os_type = "eXR"
 
-        do_break = True
-        for platform, tests in supported_platforms.iteritems():
-            if "continue" in tests.keys():
-                do_break = False
-
-            for test, patterns in tests.items():
-                if test == 'version':
-                    for pattern in patterns:
-                        match = re.search(pattern, show_version)
-                        if match:
-                            self._platform = platform
-                            if do_break:
-                                break
-                            else:
-                                continue
-                    else:
-                        continue
-                    break
-                if test == 'diag_eXR' and self._os_type == 'eXR':
-                    if show_diag_xr is None:
-                        show_diag_xr = self._driver.send("show diag summary")
-                    for pattern in patterns:
-                        match = re.search(pattern, show_diag_xr)
-                        if match:
-                            self._platform = platform
-                            break
-                    else:
-                        continue
-                    break
-            else:
-                continue
-            break
-
         self._prompt = self._driver.prompt
         self._is_console = self._detect_console()
         self._driver.disconnect()
 
-        for family, platforms in platform_families.iteritems():
-            if self._platform in platforms:
-                self._family = family
-                break
-        else:
-            self._family = 'generic'
-            raise GeneralError("Platform unsupported. Please provide show version to author")
-
-        # getting the new driver based on detected device family
-        self._init_driver()
+        self._init_driver(self._family)
         self._driver.determine_hostname(self._prompt)
 
         self._hostname = self._driver.hostname
@@ -430,10 +336,45 @@ class Connection(object):
         self.logger.info("Hostname: '{}'".format(self.hostname))
         self.logger.info("Family: {}".format(self.family))
         self.logger.info("Platform: {}".format(self.platform))
-        self.logger.info("OS: {}".format(self.os_type))
+        self.logger.info("OS: {}".format(os_names[self.os_type]))
         self.logger.info("Version: {}".format(self.os_version))
+        self.logger.info("Name: {}".format(self.udi['name']))
+        self.logger.info("Description: {}".format(self.udi['description']))
+        self.logger.info("PID: {}".format(self.udi['pid']))
+        self.logger.info("VID: {}".format(self.udi['vid']))
+        self.logger.info("SN: {}".format(self.udi['sn']))
         self.logger.info("Prompt: '{}'".format(self._prompt))
         self.logger.info("Is connected to console: {}".format(self.is_console))
+
+    def _update_udi(self):
+
+        # if command not supported return empty uid dict so far
+        try:
+            show_inventory_chassis = self._driver.send('admin show inventory chassis')
+        except CommandError:
+            return self._udi
+
+        match = re.search(r"(?i)NAME: (?P<name>.*?),? (?i)DESCR", show_inventory_chassis, re.MULTILINE)
+        if match:
+            self._udi['name'] = match.group('name').strip('" ')
+
+        match = re.search(r"(?i)DESCR: (?P<description>.*)", show_inventory_chassis, re.MULTILINE)
+        if match:
+            self._udi['description'] = match.group('description').strip('" ')
+
+        match = re.search(r"(?i)PID: (?P<pid>.*?),? ", show_inventory_chassis, re.MULTILINE)
+        if match:
+            self._udi['pid'] = match.group('pid')
+
+        match = re.search(r"(?i)VID: (?P<vid>.*?),? ", show_inventory_chassis, re.MULTILINE)
+        if match:
+            self._udi['vid'] = match.group('vid')
+
+        match = re.search(r"(?i)SN: (?P<sn>.*)", show_inventory_chassis, re.MULTILINE)
+        if match:
+            self._udi['sn'] = match.group('sn')
+
+        return self._udi
 
     def store_property(self, key, value):
         """This method stores a *value* identified by the *key* in the :class:`Connection` object.
@@ -553,9 +494,11 @@ class Connection(object):
     @property
     def platform(self):
         """Returns the string representing hardware platform model. For example: ASR-9010, ASR922, NCS-4006, etc."""
-        if self._platform == 'generic':
-            self.discovery()
-        return self._platform
+        __platform = self._udi['pid']
+        if __platform.endswith("-AC") or __platform.endswith("-DC"):
+            return __platform[:-3]
+        else:
+            return __platform
 
     @platform.setter
     def platform(self, platform):
@@ -614,3 +557,44 @@ class Connection(object):
     def is_console(self):
         """Returns *True* if the connection to the target device is over console port"""
         return self._is_console
+
+    @property
+    def name(self):
+        """Returns the chassis name"""
+        return self._udi['name']
+
+    @property
+    def description(self):
+        """Returns the chassis description"""
+        return self._udi['name']
+
+    @property
+    def pid(self):
+        """Returns the chassis PID"""
+        return self._udi['pid']
+
+    @property
+    def vid(self):
+        """Returns the chassis VID"""
+        return self._udi['vid']
+
+    @property
+    def sn(self):
+        """Returns the chassis SN"""
+        return self._udi['sn']
+
+    @property
+    def udi(self):
+        """Returns the dict representing the udi hardware record"""
+        return self._udi
+
+    @property
+    def device_info(self):
+        """Returns the dict represeing the device info record"""
+        _device_info = {
+            'family': self._family,
+            'platform': self._platform,
+            'os_type': self._os_type,
+            'os_version': self._os_version
+        }
+        return _device_info
