@@ -1,5 +1,8 @@
-Condoor
+Condoor 
 =======
+
+.. image:: https://travis-ci.org/kstaniek/condoor.svg?branch=master
+    :target: https://travis-ci.org/kstaniek/condoor
 
 Condoor is a python module providing the connection method to Cisco devices.
 It supports keyring for password management and multiple jump hosts.
