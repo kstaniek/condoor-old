@@ -27,4 +27,11 @@ Connection class
    .. autoattribute:: hostname
    .. autoattribute:: prompt
    .. autoattribute:: is_connected
-
+   .. autoattribute:: is_console
+   .. autoattribute:: name
+   .. autoattribute:: description
+   .. autoattribute:: pid
+   .. autoattribute:: vid
+   .. autoattribute:: sn
+   .. autoattribute:: udi
+   .. autoattribute:: device_info

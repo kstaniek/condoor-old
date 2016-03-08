@@ -52,7 +52,7 @@ __all__ = ['make_connection_from_urls', 'Connection', 'FSM', 'TIMEOUT', 'action'
            'CommandSyntaxError', 'ConnectionAuthenticationError']
 
 drivers = {
-    "ASR9K": ["ASR9K", "CRS", "NCS6K", "NCS4K"],
+    "ASR9K": ["ASR9K", "CRS", "NCS-6000", "NCS-4000", "CRS-16/S-B"],
     "IOS": ["ASR900"],
     "generic": ["generic"]
 
@@ -196,15 +196,18 @@ class Connection(object):
         else:
             handler = logging.NullHandler()
 
-        handler = handler
+        self._handler = handler
 
-        self.logger.addHandler(handler)
+        self.logger.addHandler(self._handler)
         self.logger.setLevel(log_level)
 
         try:
             self._session_fd = open(os.path.join(log_dir, 'session.log'), mode="w")
         except IOError:
             self._session_fd = None
+
+    def __del__(self):
+        self.logger.removeHandler(self._handler)
 
     def _set_default_log_fd(self, logfile=None):
         if self._log_session:
@@ -215,6 +218,13 @@ class Connection(object):
                     self._session_fd = None
             else:
                 self._session_fd = logfile if isinstance(logfile, file) else None
+
+    def _get_driver_name(self):
+        for driver_name, families in drivers.iteritems():
+            if self._family in families:
+                return driver_name
+        else:
+            return 'generic'
 
     def _init_driver(self, driver_name='generic'):
 
@@ -304,6 +314,7 @@ class Connection(object):
         if match:
             self.logger.debug("Platform string: {}".format(match.group()))
             self._family = match.group(1)
+            print("FAMILI: {}".format(self._family))
         else:
             self._family = 'generic'
 
@@ -328,7 +339,11 @@ class Connection(object):
         self._is_console = self._detect_console()
         self._driver.disconnect()
 
-        self._init_driver(self._family)
+        driver_name = self._get_driver_name()
+        if driver_name == 'generic':
+            raise RuntimeError("Platform {} not supported".format(self.family))
+
+        self._init_driver(driver_name)
         self._driver.determine_hostname(self._prompt)
 
         self._hostname = self._driver.hostname
@@ -566,7 +581,7 @@ class Connection(object):
     @property
     def description(self):
         """Returns the chassis description"""
-        return self._udi['name']
+        return self._udi['description']
 
     @property
     def pid(self):
