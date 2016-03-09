@@ -571,7 +571,7 @@ class Connection(object):
 
     @property
     def hostname(self):
-        """Returns the string representing the target device hostname"""
+        """Returns the string representing the target device hostname."""
         try:
             return self._hostname
         except AttributeError:
@@ -597,32 +597,46 @@ class Connection(object):
 
     @property
     def description(self):
-        """Returns the chassis description"""
+        """Returns the chassis description."""
         return self._udi['description']
 
     @property
     def pid(self):
-        """Returns the chassis PID"""
+        """Returns the chassis PID."""
         return self._udi['pid']
 
     @property
     def vid(self):
-        """Returns the chassis VID"""
+        """Returns the chassis VID."""
         return self._udi['vid']
 
     @property
     def sn(self):
-        """Returns the chassis SN"""
+        """Returns the chassis SN."""
         return self._udi['sn']
 
     @property
     def udi(self):
-        """Returns the dict representing the udi hardware record"""
+        """Returns the dict representing the udi hardware record.
+
+        {'description': 'ASR-9904 AC Chassis',
+         'name': 'Rack 0',
+         'pid': 'ASR-9904-AC',
+         'sn': 'FOX1830GT5W ',
+         'vid': 'V01'
+        }
+        """
         return self._udi
 
     @property
     def device_info(self):
-        """Returns the dict represeing the device info record"""
+        """Returns the dict represeing the device info record.
+        {'family': 'ASR9K',
+         'os_type': 'eXR',
+         'os_version': '6.1.0.06I',
+         'platform': 'generic'
+        }
+        """
         _device_info = {
             'family': self._family,
             'platform': self._platform,
