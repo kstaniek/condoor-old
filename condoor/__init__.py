@@ -619,13 +619,7 @@ class Connection(object):
     def udi(self):
         """Returns the dict representing the udi hardware record::
 
-            {
-             'description': 'ASR-9904 AC Chassis',
-             'name': 'Rack 0',
-             'pid': 'ASR-9904-AC',
-             'sn': 'FOX1830GT5W ',
-             'vid': 'V01'
-            }
+            {'description': 'ASR-9904 AC Chassis', 'name': 'Rack 0', 'pid': 'ASR-9904-AC', 'sn': 'FOX1830GT5W ', 'vid': 'V01'}
 
         """
         return self._udi
@@ -634,13 +628,8 @@ class Connection(object):
     def device_info(self):
         """Returns the dict represeing the device info record::
 
-            {
-             'family': 'ASR9K',
-             'os_type': 'eXR',
-             'os_version': '6.1.0.06I',
-             'platform': 'generic'
-            }
-            
+            {'family': 'ASR9K', 'os_type': 'eXR', 'os_version': '6.1.0.06I', 'platform': 'generic'}
+
         """
         _device_info = {
             'family': self._family,
