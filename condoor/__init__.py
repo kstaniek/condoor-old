@@ -52,7 +52,7 @@ __all__ = ['make_connection_from_urls', 'Connection', 'FSM', 'TIMEOUT', 'action'
            'CommandSyntaxError', 'ConnectionAuthenticationError']
 
 drivers = {
-    "ASR9K": ["ASR9K", "CRS", "NCS-6000", "NCS-4000", "CRS-16/S-B"],
+    "ASR9K": ["ASR9K", "CRS", "NCS6K", "NCS4K", "CRS"],
     "IOS": ["ASR900"],
     "generic": ["generic"]
 
@@ -228,6 +228,12 @@ class Connection(object):
 
     def _init_driver(self, driver_name='generic'):
 
+        if driver_name == 'generic':
+            if self._os_type in ["eXR", "XR"]:
+                driver_name = 'ASR9K'  # TODO: change the driver name to IOSXR
+            elif self._os_type in ["IOS", "XE"]:
+                driver_name = 'IOS'
+
         module_str = 'condoor.platforms.%s' % driver_name
         try:
             __import__(module_str)
@@ -280,45 +286,12 @@ class Connection(object):
         self.logger.debug("Connection port unknown")
         return False
 
-    def discovery(self, logfile=None):
-        """This method detects the device details. This method discovery the several device attributes.
-
-        Args:
-            logfile (file): Optional file descriptor for session logging. The file must be open for write.
-                The session is logged only if ``log_session=True`` was passed to the constructor.
-                It the parameter is not passed then the default *session.log* file is created in `log_dir`.
-
-        """
-
-        self._set_default_log_fd(logfile)
-
-        self._init_driver()
-
-        no_hosts = len(self._nodes)
-        for _ in xrange(no_hosts):
-            try:
-                self._driver.connect(logfile=self._session_fd)
-                break
-            except ConnectionError:
-                self._shift_driver()
-        else:
-            raise ConnectionError("Unable to connect to the device")
-
+    def _update_device_info(self):
         try:
             show_version = self._driver.send("show version brief", timeout=120)
         except CommandError:
             # IOS Hack - need to check if show version brief is supported on IOS/IOSXE
             show_version = self._driver.send("show version", timeout=120)
-
-        match = re.search("^cisco (.*?) ", show_version, re.MULTILINE)
-        if match:
-            self.logger.debug("Platform string: {}".format(match.group()))
-            self._family = match.group(1)
-            print("FAMILI: {}".format(self._family))
-        else:
-            self._family = 'generic'
-
-        self._update_udi()
 
         match = re.search("Version (.*?)(?:\[| |$)", show_version, re.MULTILINE)
         if match:
@@ -335,31 +308,24 @@ class Connection(object):
             if match:
                 self._os_type = "eXR"
 
-        self._prompt = self._driver.prompt
-        self._is_console = self._detect_console()
-        self._driver.disconnect()
+        match = re.search("^cisco (.*?) ", show_version, re.MULTILINE)
+        if match:
+            self.logger.debug("Platform string: {}".format(match.group()))
+            _family = match.group(1)
+        else:
+            self._family = 'generic'
+            return
 
-        driver_name = self._get_driver_name()
-        if driver_name == 'generic':
-            raise RuntimeError("Platform {} not supported".format(self.family))
+        if _family.startswith("ASR9K"):
+            _family = "ASR9K"
+        elif _family.startswith("NCS-6"):
+            _family = "NCS6K"
+        elif _family.startswith("NCS-4"):
+            _family = "NCS4K"
+        elif _family.startswith("CRS"):
+            _family = "CRS"
 
-        self._init_driver(driver_name)
-        self._driver.determine_hostname(self._prompt)
-
-        self._hostname = self._driver.hostname
-
-        self.logger.info("Hostname: '{}'".format(self.hostname))
-        self.logger.info("Family: {}".format(self.family))
-        self.logger.info("Platform: {}".format(self.platform))
-        self.logger.info("OS: {}".format(os_names[self.os_type]))
-        self.logger.info("Version: {}".format(self.os_version))
-        self.logger.info("Name: {}".format(self.udi['name']))
-        self.logger.info("Description: {}".format(self.udi['description']))
-        self.logger.info("PID: {}".format(self.udi['pid']))
-        self.logger.info("VID: {}".format(self.udi['vid']))
-        self.logger.info("SN: {}".format(self.udi['sn']))
-        self.logger.info("Prompt: '{}'".format(self._prompt))
-        self.logger.info("Is connected to console: {}".format(self.is_console))
+        self._family = _family
 
     def _update_udi(self):
 
@@ -389,7 +355,58 @@ class Connection(object):
         if match:
             self._udi['sn'] = match.group('sn')
 
-        return self._udi
+    def discovery(self, logfile=None):
+        """This method detects the device details. This method discovery the several device attributes.
+
+        Args:
+            logfile (file): Optional file descriptor for session logging. The file must be open for write.
+                The session is logged only if ``log_session=True`` was passed to the constructor.
+                It the parameter is not passed then the default *session.log* file is created in `log_dir`.
+
+        """
+
+        self._set_default_log_fd(logfile)
+
+        self._init_driver()
+
+        no_hosts = len(self._nodes)
+        for _ in xrange(no_hosts):
+            try:
+                self._driver.connect(logfile=self._session_fd)
+                break
+            except ConnectionError:
+                self._shift_driver()
+        else:
+            raise ConnectionError("Unable to connect to the device")
+
+        self._update_udi()
+        self._update_device_info()
+
+        self._prompt = self._driver.prompt
+        self._is_console = self._detect_console()
+        self._driver.disconnect()
+
+        driver_name = self._get_driver_name()
+        if driver_name == 'generic':
+            raise RuntimeError("Platform {} not supported".format(self.family))
+
+        self._init_driver(driver_name)
+        self._driver.determine_hostname(self._prompt)
+
+        self._hostname = self._driver.hostname
+
+        self.logger.info("Hostname: '{}'".format(self.hostname))
+        self.logger.info("Family: {}".format(self.family))
+        self.logger.info("Platform: {}".format(self.platform))
+        self.logger.info("OS: {}".format(os_names[self.os_type]))
+        self.logger.info("Version: {}".format(self.os_version))
+        self.logger.info("Name: {}".format(self.udi['name']))
+        self.logger.info("Description: {}".format(self.udi['description']))
+        self.logger.info("PID: {}".format(self.udi['pid']))
+        self.logger.info("VID: {}".format(self.udi['vid']))
+        self.logger.info("SN: {}".format(self.udi['sn']))
+        self.logger.info("Prompt: '{}'".format(self._prompt))
+        self.logger.info("Is connected to console: {}".format(self.is_console))
 
     def store_property(self, key, value):
         """This method stores a *value* identified by the *key* in the :class:`Connection` object.
