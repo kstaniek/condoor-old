@@ -240,7 +240,7 @@ class Connection(object):
             module = sys.modules[module_str]
             driver_class = getattr(module, 'Connection')
         except ImportError:
-            raise GeneralError("Platform {} not supported".format(self._platform))
+            raise GeneralError("Platform {} not supported".format(self.platform))
 
         driver = driver_class(
             self._hostname,
@@ -628,13 +628,13 @@ class Connection(object):
     def device_info(self):
         """Returns the dict represeing the device info record::
 
-            {'family': 'ASR9K', 'os_type': 'eXR', 'os_version': '6.1.0.06I', 'platform': 'generic'}
+            {'family': 'ASR9K', 'os_type': 'eXR', 'os_version': '6.1.0.06I', 'platform': 'ASR-9904'}
 
         """
         _device_info = {
-            'family': self._family,
-            'platform': self._platform,
-            'os_type': self._os_type,
-            'os_version': self._os_version
+            'family': self.family,
+            'platform': self.platform,
+            'os_type': self.os_type,
+            'os_version': self.os_version
         }
         return _device_info
