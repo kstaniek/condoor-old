@@ -7,3 +7,12 @@ install:
  - "pip install -r test-requirements.txt"
  - "pip install tox"
 script: "tox --notest"
+deploy:
+  provider: pypi
+  user: kstaniek
+  password:
+    secure: ZDWs6yN7WV1U9SrOx4hrqvxinESJRQimL8AhH/6GhvJ7WxIjnMGXV5/Gu9rIHzXNsSHdu5mTac0veN5M4IsbrZla9zRL+qdwX1i+eix46OxqlQ3VSOpRh1zTEKOKY2J8nv3wdER0u7YlM5tppkiTdrPy6kCoLxR8XSM8A0A8QCY6hCD+/cDL382AFhGVSEVMGucMMbcOyJO5t1Kmsfk1hJREnNMf96r30VFNsXyIorOQJRgc3vz9G+Kz/FFivKISNQCpMXgmxi2/0rONiETnNt4DVEO5bUrNqGn+BRWz/xHw4KgroCE6wDGhon/sUsRKo3AFUlBNhWmiMwyqs5UlNQQFTOKICSTI0taV6x4NJa/EuQsF8aBqXPj+o/sQ8HoA8/l4K0nA+z4uGd5SLRnuG78O+S+0J3Db97sVraU1o8AKdfKiO4lGUs55e4TfwZb9S/x9DQMx8zWEt1XdJUeLtT2EBg2zq7eCMCGZzttDfDaPwSiXwX8IP9/877+QCf6O2KEmxnPzOQNHC3pvJLc/4U0DupM26UTLgXlX/af+9GzwuQgN3kuTTdfywTBmsLagpAEkOkesOKfNB7+FkyD0DNPw2NcE9zywReLvMkO4/8IKMzO4y5VXcc3uiKK+THq8Xmw0UqyPw9nR+oxqHRnPE0/8WHiHG8NFiz2Lr6Tl0zU=
+  on:
+    tags: true
+    distributions: sdist bdist_wheel
+    repo: condoor

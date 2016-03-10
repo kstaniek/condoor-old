@@ -1,4 +1,4 @@
-Welcome to Condoor's |version| documentation!
+Welcome to Condoor's |release| documentation!
 =============================================
 
 Condoor is a pure Python module that uses the `Pexpect <http://pexpect.readthedocs.org>`_

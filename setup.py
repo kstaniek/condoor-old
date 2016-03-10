@@ -37,6 +37,7 @@ try:
 except ImportError:
     from distutils.core import setup, Command
 
+import re
 
 DESCRIPTION = 'This is a python module providing access to Cisco devices over Telnet and SSH'
 with codecs.open('README.rst', 'r', encoding='UTF-8') as readme:
@@ -61,15 +62,25 @@ packages = [
 
 NAME = 'condoor'
 
+
+def version():
+    pyfile = 'condoor/__init__.py'
+    with open(pyfile) as fp:
+        data = fp.read()
+
+    match = re.search("__version__ = '([^']+)'", data)
+    assert match, 'cannot find version in {}'.format(pyfile)
+    return match.group(1)
+
 setup(
     name=NAME,
-    version='0.0.8',
+    version=version(),
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     author='Klaudiusz Staniek',
     author_email='klstanie [at] cisco.com',
     url='https://github.com/kstaniek/condoor',
-    download_url='https://github.com/kstaniek/condoor/tarball/0.0.8',
+    download_url='https://github.com/kstaniek/condoor/tarball/{}'.format(version),
     keywords='cisco,automation',
     tests_require=['tox', 'pytest'],
     platforms=['any'],
