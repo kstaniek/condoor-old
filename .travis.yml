@@ -1,17 +1,16 @@
 language: python
 python:
-  - "2.7"
-# command to install dependencies
-install: 
- - "pip install -r requirements.txt"
- - "pip install -r test-requirements.txt"
- - "pip install tox"
-script: "tox --notest"
+- '2.7'
+install:
+- pip install -r requirements.txt
+- pip install -r test-requirements.txt
+- pip install tox
+script: tox --notest
 deploy:
   provider: pypi
   user: kstaniek
   password:
-    secure: ZDWs6yN7WV1U9SrOx4hrqvxinESJRQimL8AhH/6GhvJ7WxIjnMGXV5/Gu9rIHzXNsSHdu5mTac0veN5M4IsbrZla9zRL+qdwX1i+eix46OxqlQ3VSOpRh1zTEKOKY2J8nv3wdER0u7YlM5tppkiTdrPy6kCoLxR8XSM8A0A8QCY6hCD+/cDL382AFhGVSEVMGucMMbcOyJO5t1Kmsfk1hJREnNMf96r30VFNsXyIorOQJRgc3vz9G+Kz/FFivKISNQCpMXgmxi2/0rONiETnNt4DVEO5bUrNqGn+BRWz/xHw4KgroCE6wDGhon/sUsRKo3AFUlBNhWmiMwyqs5UlNQQFTOKICSTI0taV6x4NJa/EuQsF8aBqXPj+o/sQ8HoA8/l4K0nA+z4uGd5SLRnuG78O+S+0J3Db97sVraU1o8AKdfKiO4lGUs55e4TfwZb9S/x9DQMx8zWEt1XdJUeLtT2EBg2zq7eCMCGZzttDfDaPwSiXwX8IP9/877+QCf6O2KEmxnPzOQNHC3pvJLc/4U0DupM26UTLgXlX/af+9GzwuQgN3kuTTdfywTBmsLagpAEkOkesOKfNB7+FkyD0DNPw2NcE9zywReLvMkO4/8IKMzO4y5VXcc3uiKK+THq8Xmw0UqyPw9nR+oxqHRnPE0/8WHiHG8NFiz2Lr6Tl0zU=
+    secure: pCXUyyigQtk/g3lbVh16y5lCxf6zaUNQYpUqRLYCQaqEV1UuLik2olb/nDEmT691lrymuJwL61TuO3XwXS6wpfGAXzw49Zn1cFqYl/WSX3NQkHDt7YCCuvRB1YdCdhMgkcONnVSaACeEBGAQSszigbormWE/dejFVXK/JZS6yFmRWnTVmpz+2u7cc+AUT9bVtePFkfvqUpdbnia7n4mfNm9iBivxFUEO2u6LsMKu1LsqrsmxlZUl8KlIcirDcOsrKZPk/sLCVPDOOBIWeSkLqVYJeAgVDWs6f/8bKch/sHgi/oK7+l8x6HR+AgpDIwhZkMAJVQ9w75IS7JoNzWNgjAjJDDHVUrFftxhVqGsl1BtuKIZ5n0GwKF+H/THTTLn0dYsCQ88I0QdTS1CX9H5lZedISMS39hTYZ8WkPZx1ln4dmXlqZ0oOrQyfwMn092BGlF3KzMxTrajBBJ7ZdmEAuFVVJ0ufcHj/HW68KnpYwRNrKMLvt/FufO0Qi/P7l6GgniZLP6xri+mjlYdgwyAi4EzzJfqU5mSl/P5uYH1uwbh7+Zrtmj349gLVqNX3amoKgTYwqMAJV8qUAD5aYTFt0QjTYuqvZyr/XWfkiXmZ0iEkLLMN8ZnLST4lO+c8g46YJVYgZcqUkwSgCgFabRrbrlLkzmI/r+6WOHw2jV4EEoc=
   on:
     tags: true
     distributions: sdist bdist_wheel
