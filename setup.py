@@ -80,7 +80,7 @@ setup(
     author='Klaudiusz Staniek',
     author_email='klstanie [at] cisco.com',
     url='https://github.com/kstaniek/condoor',
-    download_url='https://github.com/kstaniek/condoor/tarball/{}'.format(version),
+    download_url='https://github.com/kstaniek/condoor/tarball/{}'.format(version()),
     keywords='cisco,automation',
     tests_require=['tox', 'pytest'],
     platforms=['any'],
