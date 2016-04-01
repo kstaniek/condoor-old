@@ -534,7 +534,7 @@ class Connection(object):
             return match.group(1)
         else:
             return __pid
-        
+
     @platform.setter
     def platform(self, platform):
         self._platform = platform
