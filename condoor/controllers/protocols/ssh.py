@@ -54,11 +54,11 @@ class SSH(Protocol):
 
     def _get_command(self, version=2):
         if self.username:
-            command = "ssh -{} -p {} {}@{}".format(
+            command = "ssh -o'NoHostAuthenticationForLocalhost=yes' -{} -p {} {}@{}".format(
                 version, self.port, self.username, self.hostname
             )
         else:
-            command = "ssh -{} -p {} {}".format(
+            command = "ssh -o'NoHostAuthenticationForLocalhost=yes' -{} -p {} {}".format(
                 version, self.port, self.hostname
             )
         return command
