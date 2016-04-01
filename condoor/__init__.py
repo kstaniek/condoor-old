@@ -528,12 +528,13 @@ class Connection(object):
     @property
     def platform(self):
         """Returns the string representing hardware platform model. For example: ASR-9010, ASR922, NCS-4006, etc."""
-        __platform = self._udi['pid']
-        if __platform.endswith("-AC") or __platform.endswith("-DC"):
-            return __platform[:-3]
+        __pid = self._udi['pid']
+        match = re.search(r"([A-Z]{3}[-| ]?[0-9]{3,4})", __pid)
+        if match:
+            return match.group(1)
         else:
-            return __platform
-
+            return __pid
+        
     @platform.setter
     def platform(self, platform):
         self._platform = platform
