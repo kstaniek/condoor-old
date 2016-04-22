@@ -39,6 +39,7 @@ from ..exceptions import \
     CommandTimeoutError
 
 from ..controllers.fsm import FSM, action
+from ..controllers.protocols.base import RECONFIGURE_USERNAME_PROMPT
 
 
 class Connection(generic.Connection):
@@ -86,7 +87,7 @@ class Connection(generic.Connection):
     def enable(self, enable_password=None):
         pass
 
-    def reload(self, rommon_boot_command="boot"):
+    def reload(self, rommon_boot_command="boot", reload_timeout=300, os="XR"):
         """
         RP/0/RSP0/CPU0:ASR9K-PE4#reload
         Tue Nov 10 14:43:11.488 UTC
@@ -100,39 +101,75 @@ class Connection(generic.Connection):
 
         self.rommon_boot_command = rommon_boot_command
 
-        RELOAD = "admin reload location all"
+        if os == "eXR":
+            ADMIN = "admin"
+            RELOAD = "hw-module location all reload"
+            CONFIRM_RELOAD = re.compile(re.escape("Reload hardware module ? [no,yes]"))
+            # STANDBY_CONSOLE = ios con0/RSP1/CPU0 is in standby
+            STBY_CONSOLE = re.compile("ios con[0|1]/RS?P[0-1]/CPU[0-9] is in standby")
+        else:
+            RELOAD = "admin reload location all"
+            PROCEED = re.compile(re.escape("Proceed with reload? [confirm]"))
+
         DONE = re.compile(re.escape("[Done]"))
-        PROCEED = re.compile(re.escape("Proceed with reload? [confirm]"))
         CONFIGURATION_COMPLETED = re.compile("SYSTEM CONFIGURATION COMPLETED")
         CONFIGURATION_IN_PROCESS = re.compile("SYSTEM CONFIGURATION IN PROCESS")
         # CONSOLE = re.compile("ios con0/RSP0/CPU0 is now available"))
         CONSOLE = re.compile("ios con[0|1]/RS?P[0-1]/CPU0 is now available")
+
         RELOAD_NA = re.compile("Reload to the ROM monitor disallowed from a telnet line")
 
         # FIXME: Not sure need to set echo to false
         self.ctrl.setecho(False)
-        self.ctrl.sendline(RELOAD)
 
-        events = [RELOAD_NA, RELOAD, DONE, PROCEED, CONFIGURATION_IN_PROCESS, self.rommon_prompt, self.press_return,
-                  CONSOLE, CONFIGURATION_COMPLETED,
-                  pexpect.TIMEOUT, pexpect.EOF]
-        transitions = [
-            # Preparing system for backup. This may take a few minutes especially for large configurations.
-            (RELOAD, [0], 1, self._send_lf, 300),
-            (RELOAD_NA, [1], -1, self._reload_na, 0),
-            (DONE, [1], 2, None, 120),
-            (PROCEED, [2], 3, self._send_lf, 300),
-            (self.rommon_prompt, [0, 3], 4, self._send_boot, 600),
+        transitions_shared = [
             # here must be authentication
             (CONSOLE, [3, 4], 5, None, 600),
-            (self.press_return, [5], 6, self._send_lf, 180),
-            (CONFIGURATION_IN_PROCESS, [6], 7, self._authenticate, 180),
-            (CONFIGURATION_COMPLETED, [7], -1, None, 0),
+            (self.press_return, [5], 6, self._send_lf, 300),
+            # if asks for username/password reconfiguration, go to success state and let plugin handle the rest.
+            (RECONFIGURE_USERNAME_PROMPT, [6, 7], -1, None, 0),
+            (CONFIGURATION_IN_PROCESS, [6], 7, None, 180),
+            (CONFIGURATION_COMPLETED, [7], -1, self._return_and_authenticate, 0),
+
             (pexpect.TIMEOUT, [0, 1, 2], -1,
              ConnectionAuthenticationError("Unable to reload", self.hostname), 0),
             (pexpect.EOF, [0, 1, 2, 3, 4, 5], -1,
-             ConnectionError("Device disconnected", self.hostname), 0)
+             ConnectionError("Device disconnected", self.hostname), 0),
+            (pexpect.TIMEOUT, [6], 7, self._send_line, 180),
+            (pexpect.TIMEOUT, [7], -1,
+             ConnectionAuthenticationError("Unable to reconnect after reloading", self.hostname), 0),
         ]
+
+        if os == "eXR":
+            self.send(cmd=ADMIN)
+            self.ctrl.sendline(RELOAD)
+
+            events = [RELOAD_NA, RELOAD, CONFIRM_RELOAD, DONE, STBY_CONSOLE, CONFIGURATION_IN_PROCESS, self.press_return,
+                  CONSOLE, CONFIGURATION_COMPLETED, RECONFIGURE_USERNAME_PROMPT,
+                  pexpect.TIMEOUT, pexpect.EOF]
+
+            transitions = [
+                # Preparing system for backup. This may take a few minutes especially for large configurations.
+                (RELOAD, [0], 1, None, 120),
+                (RELOAD_NA, [1], -1, self._reload_na, 0),
+                (CONFIRM_RELOAD, [1], 2, self._send_yes, 120),
+                (DONE, [2], 3, None, reload_timeout),
+                (STBY_CONSOLE, [3], -1, None, 10)
+            ] + transitions_shared
+
+        else:
+            self.ctrl.sendline(RELOAD)
+            events = [RELOAD_NA, RELOAD, DONE, PROCEED, CONFIGURATION_IN_PROCESS, self.rommon_prompt, self.press_return,
+                      CONSOLE, CONFIGURATION_COMPLETED, RECONFIGURE_USERNAME_PROMPT,
+                      pexpect.TIMEOUT, pexpect.EOF]
+            transitions = [
+                # Preparing system for backup. This may take a few minutes especially for large configurations.
+                (RELOAD, [0], 1, self._send_lf, 300),
+                (RELOAD_NA, [1], -1, self._reload_na, 0),
+                (DONE, [1], 2, None, 120),
+                (PROCEED, [2], 3, self._send_lf, reload_timeout),
+                (self.rommon_prompt, [0, 3], 4, self._send_boot, 600),
+            ] + transitions_shared
 
         fs = FSM("RELOAD", self.ctrl, events, transitions, timeout=10)
         return fs.run()
@@ -175,6 +212,12 @@ class Connection(generic.Connection):
 
     @action
     def _authenticate(self, ctx):
+        ctx.ctrl.connect(start_hop=len(ctx.ctrl.hosts)-1, spawn=False, detect_prompt=False)
+        return True
+
+    @action
+    def _return_and_authenticate(self, ctx):
+        self._send_lf(ctx)
         ctx.ctrl.connect(start_hop=len(ctx.ctrl.hosts)-1, spawn=False, detect_prompt=False)
         return True
 

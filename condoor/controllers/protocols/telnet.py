@@ -69,12 +69,13 @@ class Telnet(Protocol):
             username_prompt = USERNAME_PROMPT
         #              0            1               2                3              4            5      6
         events = [ESCAPE_CHAR, PRESS_RETURN, STANDBY_CONSOLE, username_prompt, password_prompt, more, prompt,
-                  #     7                8                 9               10
-                  rommon_prompt, UNABLE_TO_CONNECT, RESET_BY_PEER, pexpect.TIMEOUT]
+                  #     7                8                 9               10         11
+                  rommon_prompt, UNABLE_TO_CONNECT, RESET_BY_PEER, pexpect.TIMEOUT, PASSWORD_OK]
 
         transitions = [
             (ESCAPE_CHAR, [0], 1, None, 20),
             (PRESS_RETURN, [0, 1], 1, self.send_new_line, 10),
+            (PASSWORD_OK, [0, 1], 1, self.send_new_line, 10),
             (STANDBY_CONSOLE, [0, 5], -1, ConnectionError("Standby console", self.hostname), 0),
             (username_prompt, [0, 1, 5, 6], -1, self.save_pattern, 0),
             (password_prompt, [0, 1, 5], -1, self.save_pattern, 0),
@@ -111,7 +112,8 @@ class Telnet(Protocol):
                   pexpect.TIMEOUT, pexpect.EOF]
 
         transitions = [
-            (username_prompt, [0, 1], 1, self.send_username, 10),
+            (username_prompt, [0], 1, self.send_username, 10),
+            (username_prompt, [1], 1, None, 10),
             (password_prompt, [0, 1], 2, self.send_pass, 20),
             (username_prompt, [2], -1, self.authentication_error, 0),
             (prompt, [0, 1, 2], -1, None, 0),

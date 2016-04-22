@@ -30,7 +30,6 @@
 
 import re
 import pexpect
-
 from threading import Lock
 
 from ..exceptions import \
@@ -357,7 +356,6 @@ class Connection(object):
         self.ctrl.sendline()
         self.ctrl.setecho(True)
 
-
     def _execute_command(self, cmd, timeout, wait_for_string):
         with self.command_execution_pending:
             try:
@@ -447,6 +445,16 @@ class Connection(object):
     @action
     def _send_lf(self, ctx):
         ctx.ctrl.send('\r')
+        return True
+
+    @action
+    def _send_line(self, ctx):
+        ctx.ctrl.send('\r\n')
+        return True
+
+    @action
+    def _send_yes(self, ctx):
+        ctx.ctrl.sendline('yes')
         return True
 
     @action
