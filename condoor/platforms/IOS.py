@@ -77,7 +77,7 @@ class Connection(generic.Connection):
             self.enable()
 
     def determine_hostname(self, prompt):
-        result = re.search(r"^(.*)#", prompt)
+        result = re.search(r"^(.*)[#|>]", prompt)
         if result:
             self.hostname = result.group(1)
             self._debug("Hostname detected: {}".format(self.hostname))

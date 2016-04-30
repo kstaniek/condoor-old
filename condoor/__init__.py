@@ -276,13 +276,11 @@ class Connection(object):
             self.logger.debug("Connection port unknown")
             return False
 
-        fields = line.split()
-
-        if 'vty' in fields[1]:
-            self.logger.debug("Detected connection to {}".format(fields[1]))
+        if 'vty' in line:
+            self.logger.debug("Detected connection to vty")
             return False
-        elif 'con' in fields[1]:
-            self.logger.debug("Detected connection to {} on node {}".format(fields[1][:3], fields[1][3:]))
+        elif 'con' in line:
+            self.logger.debug("Detected connection to console")
             return True
 
         self.logger.debug("Connection port unknown")
@@ -313,6 +311,7 @@ class Connection(object):
         match = re.search("^cisco (.*?) ", show_version, re.MULTILINE)
         if match:
             self.logger.debug("Platform string: {}".format(match.group()))
+            self._platform = match.group(1)
             _family = match.group(1)
         else:
             self._family = 'generic'
@@ -326,14 +325,23 @@ class Connection(object):
             _family = "NCS4K"
         elif _family.startswith("CRS"):
             _family = "CRS"
+        elif _family.startswith("ASR-9") and self._os_type == "XE":
+            _family = "ASR900"
 
         self._family = _family
 
     def _update_udi(self):
 
+        if self._os_type in ['XR', 'eXR']:
+            cmd = 'admin show inventory chassis'
+        elif self._os_type in ['IOS', 'XE']:
+            cmd = 'show inventory'
+        else:
+            return self._uid  # do not detect
+
         # if command not supported return empty uid dict so far
         try:
-            show_inventory_chassis = self._driver.send('admin show inventory chassis')
+            show_inventory_chassis = self._driver.send(cmd)
         except CommandError:
             return self._udi
 
@@ -381,8 +389,8 @@ class Connection(object):
         else:
             raise ConnectionError("Unable to connect to the device")
 
-        self._update_udi()
         self._update_device_info()
+        self._update_udi()
 
         self._prompt = self._driver.prompt
         self._is_console = self._detect_console()
@@ -533,7 +541,7 @@ class Connection(object):
         if match:
             return match.group(1)
         else:
-            return __pid
+            return self._platform
 
     @platform.setter
     def platform(self, platform):
@@ -542,8 +550,8 @@ class Connection(object):
     @property
     def family(self):
         """Returns the string representing hardware platform family. For example: ASR9K, ASR900, NCS6K, etc."""
-        if self._family == 'generic':
-            self.discovery()
+        #if self._family == 'generic':
+        #    self.discovery()
         return self._family
 
     @property

@@ -118,7 +118,7 @@ class Connection(object):
 
         if not self.connected:
             self.ctrl = self.ctrl_class(self, self.hostname, self.hosts, self.account_manager, logfile=logfile)
-            self._info("Connecting to {}".format(self.__repr__()))
+            self._info("Connecting to {} using {} driver".format(self.__repr__(), self.platform))
         self.connected = self.ctrl.connect()
 
         if self.connected:
