@@ -168,7 +168,7 @@ class Controller(object):
             while index != 1 and hop < 10:
                 self.sendline('exit')
                 index = self.expect(
-                    [pexpect.TIMEOUT, pexpect.EOF, "con.*is now available|rommon"],
+                    [pexpect.TIMEOUT, pexpect.EOF, "con.*is now available|rommon|User Access Verification"],
                     timeout=2
                 )
                 if index == 1:

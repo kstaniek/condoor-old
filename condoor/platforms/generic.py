@@ -53,10 +53,11 @@ prompt_patterns = {
     'IOSXR': re.compile('(RP/\d+/RS?P[0-1]/CPU[0-3]:.*?)(\([^()]*\))?#'),
     'CALVADOS': re.compile("sysadmin-vm:[0-3]_RS?P[0-1]#"),
     'ROMMON': re.compile("rommon [A|B]?\d+ >"),
-    'IOS': re.compile('[\w\-]+[#|>]')
+    'IOS': re.compile('[\w\-]+[#|>]'),
+    'NX-OS': re.compile('[\w\-]+# '),
 }
 
-os_types = ['IOSXR', 'CALVADOS', 'ROMMON', 'IOS']
+os_types = ['IOSXR', 'CALVADOS', 'ROMMON', 'IOS', 'NX-OS']
 
 
 class Connection(object):
@@ -76,7 +77,8 @@ class Connection(object):
                                    '\% Type "show \?" for a list of subcommands'
                                    '\%(w+)?for a list of subcommands|'
                                    '\% Ambiguous command:|'
-                                   '\% Invalid input detected')
+                                   '\% Invalid input detected|'
+                                   "\% Invalid command at .* marker")  # NX-OS
     press_return = re.compile("Press RETURN to get started\.")
     more = re.compile(" --More-- ")
 
@@ -344,7 +346,7 @@ class Connection(object):
 
     def prepare_terminal_session(self):
         self.send('terminal len 0')
-        self.send('terminal width 0')
+        #self.send('terminal width 0')
 
     def _compile_prompts(self):
         self.compiled_prompts = [re.compile(re.escape(prompt)) for prompt in self.ctrl.detected_prompts]

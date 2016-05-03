@@ -56,6 +56,7 @@ __all__ = ['make_connection_from_urls', 'Connection', 'FSM', 'TIMEOUT', 'action'
 drivers = {
     "ASR9K": ["ASR9K", "CRS", "NCS6K", "NCS4K", "CRS"],
     "IOS": ["ASR900"],
+    "NX-OS": ["N9K"],
     "generic": ["generic"]
 
 }
@@ -65,7 +66,8 @@ os_names = {
     'XR': 'IOS XR',
     'eXR': 'IOS XR 64 bit',
     'XE': 'IOS XE',
-    'NXOS': 'NXOS',
+    'NX-OS': 'NX-OS',
+
 }
 
 
@@ -235,6 +237,8 @@ class Connection(object):
                 driver_name = 'ASR9K'  # TODO: change the driver name to IOSXR
             elif self._os_type in ["IOS", "XE"]:
                 driver_name = 'IOS'
+            elif self._os_type in ['NX-OS']:
+                driver_name = 'NX-OS'
 
         module_str = 'condoor.platforms.%s' % driver_name
         try:
@@ -279,7 +283,7 @@ class Connection(object):
         if 'vty' in line:
             self.logger.debug("Detected connection to vty")
             return False
-        elif 'con' in line:
+        elif 'con' in line or 'tty' in line:  # tty for NX-OS
             self.logger.debug("Detected connection to console")
             return True
 
@@ -297,7 +301,11 @@ class Connection(object):
         if match:
             self._os_version = match.group(1)
 
-        match = re.search("(XR|XE)", show_version)
+        match = re.search("System version: (.*)", show_version, re.MULTILINE)
+        if match:
+            self._os_version = match.group(1)  # override for NX-OS
+
+        match = re.search("(XR|XE|NX-OS)", show_version)
         if match:
             self._os_type = match.group(1)
         else:
@@ -308,11 +316,12 @@ class Connection(object):
             if match:
                 self._os_type = "eXR"
 
-        match = re.search("^cisco (.*?) ", show_version, re.MULTILINE)
+        #match = re.search("^[ ?]cisco (.*?) ", show_version, re.MULTILINE)  # NX-OS
+        match = re.search("^(  )?cisco (.*?) ", show_version, re.MULTILINE)  # NX-OS
         if match:
             self.logger.debug("Platform string: {}".format(match.group()))
-            self._platform = match.group(1)
-            _family = match.group(1)
+            self._platform = match.group(2)
+            _family = match.group(2)
         else:
             self._family = 'generic'
             return
@@ -327,17 +336,20 @@ class Connection(object):
             _family = "CRS"
         elif _family.startswith("ASR-9") and self._os_type == "XE":
             _family = "ASR900"
+        elif _family.startswith("Nexus9000") and self._os_type == "NX-OS":
+            _family = "N9K"
 
         self._family = _family
 
     def _update_udi(self):
 
+        print(self._os_type)
         if self._os_type in ['XR', 'eXR']:
             cmd = 'admin show inventory chassis'
-        elif self._os_type in ['IOS', 'XE']:
+        elif self._os_type in ['IOS', 'XE', 'NX-OS']:
             cmd = 'show inventory'
         else:
-            return self._uid  # do not detect
+            return self._udi  # do not detect
 
         # if command not supported return empty uid dict so far
         try:
@@ -347,7 +359,7 @@ class Connection(object):
 
         match = re.search(r"(?i)NAME: (?P<name>.*?),? (?i)DESCR", show_inventory_chassis, re.MULTILINE)
         if match:
-            self._udi['name'] = match.group('name').strip('" ')
+            self._udi['name'] = match.group('name').strip('" ,')
 
         match = re.search(r"(?i)DESCR: (?P<description>.*)", show_inventory_chassis, re.MULTILINE)
         if match:
