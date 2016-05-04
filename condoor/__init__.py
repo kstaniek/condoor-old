@@ -343,7 +343,6 @@ class Connection(object):
 
     def _update_udi(self):
 
-        print(self._os_type)
         if self._os_type in ['XR', 'eXR']:
             cmd = 'admin show inventory chassis'
         elif self._os_type in ['IOS', 'XE', 'NX-OS']:

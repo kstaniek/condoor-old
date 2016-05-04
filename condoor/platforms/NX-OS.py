@@ -51,6 +51,7 @@ class Connection(generic.Connection):
     password_prompt = re.compile("Password: ")
     username_prompt = re.compile("login: ")
     rommon_prompt = re.compile("loader >")
+    standby_console = re.compile("\(standby\)")
 
     def prepare_prompt(self):
         mode = self.ctrl.detected_target_prompt[-1]

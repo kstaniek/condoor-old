@@ -81,6 +81,7 @@ class Connection(object):
                                    "\% Invalid command at .* marker")  # NX-OS
     press_return = re.compile("Press RETURN to get started\.")
     more = re.compile(" --More-- ")
+    standby_console = re.compile("Standby console disabled|\(standby\)")
 
     def __init__(self, name, hosts, controller_class, logger, account_manager=None):
         self.hosts = hosts
