@@ -76,10 +76,28 @@ class Connection(generic.Connection):
         self.send('terminal width 0')
 
     def determine_hostname(self, prompt):
-        result = re.search(r":?.*:(.*)#", prompt)
-        if result:
-            self.hostname = result.group(1)
+        """
+        RP/0/RP0/CPU0:Deploy#
+        RP/0/RP0/CPU0:Deploy(config)#
+        sysadmin-vm:0_RP0:NCS-Deploy2#
+        sysadmin-vm:0_RP0:NCS-Deploy2(config)#
+        sysadmin-vm:0_RP0#
+        sysadmin-vm:0_RP0(config)#
+        sysadmin-vm:0_RSP0#
+
+        """
+        try:
+            if re.match(self.calvados_prompt, prompt):
+                self.hostname = 'NOT-SET'
+            else:
+                self.hostname = prompt.split(":")[-1][:-1].split('(')[0]
             self._debug("Hostname detected: {}".format(self.hostname))
+            if self.ctrl:
+                self.ctrl.hostname = self.hostname
+        except:
+            raise
+            self._warning("Unable to extract hostname from prompt: {}".format(prompt))
+
 
     def boot(self):
         pass
