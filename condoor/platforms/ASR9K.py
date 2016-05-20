@@ -63,7 +63,7 @@ class Connection(generic.Connection):
     def prepare_prompt(self):
         prompt_re = re.compile(
             '((({})(\([^()]*\))?|'
-            'sysadmin-vm:[0-3]_RS?P[0-1])#|'
+            'sysadmin-vm:[0-3]_RS?P[0-1]:?.*)#|'
             'rommon \d+ >|'
             'RP/[0-3]/RS?P[0-1]/CPU[0-1]:ios)'.format(re.escape(self.ctrl.detected_target_prompt[:-1]))
         )
@@ -76,7 +76,7 @@ class Connection(generic.Connection):
         self.send('terminal width 0')
 
     def determine_hostname(self, prompt):
-        result = re.search(r":(.*)#", prompt)
+        result = re.search(r":?.*:(.*)#", prompt)
         if result:
             self.hostname = result.group(1)
             self._debug("Hostname detected: {}".format(self.hostname))

@@ -416,6 +416,7 @@ class Connection(object):
         prompt = self.ctrl.after
         self.ctrl.detected_target_prompt = prompt
         self._determine_config_mode(prompt)
+        self.determine_hostname(prompt)
         ctx.finished = True
         return True
 
