@@ -35,7 +35,7 @@ from ..utils import to_list
 from ..utils import delegate
 
 from ..controllers.protocols import make_protocol
-from ..exceptions import ConnectionError
+from ..exceptions import ConnectionError, ConnectionTimeoutError
 
 import pexpect
 
@@ -133,6 +133,10 @@ class Controller(object):
                                         connected = False
                         else:
                             connected = False
+                    except ConnectionTimeoutError as e:
+                        self._dbg(40, "Error during connecting to device: {}".format(e.message))
+                        self.disconnect()
+                        raise
                     except Exception as e:
                         self._dbg(40, "Error during connecting to device: {}".format(e.message))
                         raise
