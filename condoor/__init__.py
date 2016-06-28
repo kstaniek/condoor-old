@@ -270,7 +270,7 @@ class Connection(object):
         try:
             output = self._driver.send("show users")
         except CommandError:
-            self.logger("Command 'show users' not suported")
+            self.logger.debug("Command 'show users' not suported")
             return False
 
         for line in output.split('\n'):
