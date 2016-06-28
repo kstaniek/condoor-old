@@ -444,6 +444,18 @@ class Connection(object):
         self.logger.info("Is connected to console: {}".format(self.is_console))
         self._discovered = True
 
+        key = str(self._nodes[-1])
+        cache = None
+        try:
+            cache = shelve.open("/tmp/condoor.shelve")
+        except Exception:
+            cache = None
+            self.logger.error("Unable to open cache file")
+        if cache:
+            cache[key] = self.device_description_record
+            self.logger.info("Device description record stored in the cache")
+            cache.close()
+
     def store_property(self, key, value):
         """This method stores a *value* identified by the *key* in the :class:`Connection` object.
 
@@ -487,20 +499,27 @@ class Connection(object):
 
         key = str(self._nodes[-1])
 
-        cache = shelve.open("/tmp/condoor.shelve")
-
         try:
-            self.device_description_record = cache[key]
-            self.logger.info("Used cached device description record")
-            self._discovered = True
-        except KeyError:
-            self.logger.debug("Node cache missed.")
+            cache = shelve.open("/tmp/condoor.shelve")
+        except Exception:
+            cache = None
+            self.logger.error("Unable to open cache file")
+
+        if cache:
+            try:
+                self.device_description_record = cache[key]
+                self.logger.info("Used cached device description record")
+                self._discovered = True
+            except KeyError:
+                self.logger.debug("Node cache missed.")
+            finally:
+                cache.close()
 
         self._set_default_log_fd(logfile)
         if not self._discovered:
             self.discovery(logfile=logfile)
             self.logger.info("Discovery phase done")
-            cache[key] = self.device_description_record
+
 
         self.logger.debug("Driver: {}".format(self._driver.platform))
         no_hosts = len(self._nodes)
