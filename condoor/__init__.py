@@ -31,6 +31,7 @@ import os
 import re
 import logging
 import time
+import shelve
 
 from hopinfo import make_hop_info_from_url
 from controllers.pexpect_ctrl import Controller
@@ -394,7 +395,8 @@ class Connection(object):
 
         self._set_default_log_fd(logfile)
 
-        self._init_driver()
+        if self._driver is None:
+            self._init_driver()
 
         no_hosts = len(self._nodes)
         for _ in xrange(no_hosts):
@@ -413,7 +415,6 @@ class Connection(object):
         self._is_console = self._detect_console()
 
         ctrl = self._driver.ctrl
-        ##self._driver.disconnect()
 
         driver_name = self._get_driver_name()
         self.logger.debug("Using driver: '{}'".format(driver_name))
@@ -424,7 +425,6 @@ class Connection(object):
         self._init_driver(driver_name)
         self._driver.ctrl = ctrl
         self._driver.connected = True
-
 
         self._driver.determine_hostname(self._prompt)
 
@@ -484,10 +484,23 @@ class Connection(object):
             ConnectionTimeoutError: If the connection timeout happened.
 
         """
+
+        key = str(self._nodes[-1])
+
+        cache = shelve.open("/tmp/condoor.shelve")
+
+        try:
+            self.device_description_record = cache[key]
+            self.logger.info("Used cached device description record")
+            self._discovered = True
+        except KeyError:
+            self.logger.debug("Node cache missed.")
+
         self._set_default_log_fd(logfile)
         if not self._discovered:
             self.discovery(logfile=logfile)
             self.logger.info("Discovery phase done")
+            cache[key] = self.device_description_record
 
         self.logger.debug("Driver: {}".format(self._driver.platform))
         no_hosts = len(self._nodes)
@@ -679,3 +692,27 @@ class Connection(object):
             'os_version': self.os_version
         }
         return _device_info
+
+    @property
+    def device_description_record(self):
+        return {
+            'driver_name': self._get_driver_name(),
+            'device_info': self.device_info,
+            'udi': self.udi,
+            'hostname': self.hostname,
+            'console': self.is_console
+        }
+
+    @device_description_record.setter
+    def device_description_record(self, ddr):
+        self._init_driver(ddr['driver_name'])
+        self._hostname = ddr['hostname']
+        self._is_console = ddr['console']
+        di = ddr['device_info']
+        self._family = di['family']
+        self._platform = di['platform']
+        self._os_type = di['os_type']
+        self._os_version = di['os_version']
+        self._udi = ddr['udi']
+
+
