@@ -46,12 +46,12 @@ class Connection(generic.Connection):
     """
     This is a platform specific implementation of based Driver class
     """
-    platform = 'ASR9K'
+    platform = 'XR'
     command_syntax_re = re.compile("\%(w+)?for a list of subcommands|"
                                    "\% Ambiguous command:|"
                                    "\% Invalid input detected")
 
-    platform_prompt = generic.prompt_patterns['IOSXR']
+    platform_prompt = generic.prompt_patterns['XR']
 
     password_prompt = re.compile("[Pp]assword: ")
     username_prompt = re.compile("[Uu]sername: ")
@@ -119,15 +119,8 @@ class Connection(generic.Connection):
 
         self.rommon_boot_command = rommon_boot_command
 
-        if os == "eXR":
-            ADMIN = "admin"
-            RELOAD = "hw-module location all reload"
-            CONFIRM_RELOAD = re.compile(re.escape("Reload hardware module ? [no,yes]"))
-            # STANDBY_CONSOLE = ios con0/RSP1/CPU0 is in standby
-            STBY_CONSOLE = re.compile("ios con[0|1]/RS?P[0-1]/CPU[0-9] is in standby")
-        else:
-            RELOAD = "admin reload location all"
-            PROCEED = re.compile(re.escape("Proceed with reload? [confirm]"))
+        RELOAD = "admin reload location all"
+        PROCEED = re.compile(re.escape("Proceed with reload? [confirm]"))
 
         DONE = re.compile(re.escape("[Done]"))
         CONFIGURATION_COMPLETED = re.compile("SYSTEM CONFIGURATION COMPLETED")
@@ -158,36 +151,18 @@ class Connection(generic.Connection):
              ConnectionAuthenticationError("Unable to reconnect after reloading", self.hostname), 0),
         ]
 
-        if os == "eXR":
-            self.send(cmd=ADMIN)
-            self.ctrl.sendline(RELOAD)
-
-            events = [RELOAD_NA, RELOAD, CONFIRM_RELOAD, DONE, STBY_CONSOLE, CONFIGURATION_IN_PROCESS, self.press_return,
+        self.ctrl.sendline(RELOAD)
+        events = [RELOAD_NA, RELOAD, DONE, PROCEED, CONFIGURATION_IN_PROCESS, self.rommon_prompt, self.press_return,
                   CONSOLE, CONFIGURATION_COMPLETED, RECONFIGURE_USERNAME_PROMPT,
                   pexpect.TIMEOUT, pexpect.EOF]
-
-            transitions = [
-                # Preparing system for backup. This may take a few minutes especially for large configurations.
-                (RELOAD, [0], 1, None, 120),
-                (RELOAD_NA, [1], -1, self._reload_na, 0),
-                (CONFIRM_RELOAD, [1], 2, self._send_yes, 120),
-                (DONE, [2], 3, None, reload_timeout),
-                (STBY_CONSOLE, [3], -1, None, 10)
-            ] + transitions_shared
-
-        else:
-            self.ctrl.sendline(RELOAD)
-            events = [RELOAD_NA, RELOAD, DONE, PROCEED, CONFIGURATION_IN_PROCESS, self.rommon_prompt, self.press_return,
-                      CONSOLE, CONFIGURATION_COMPLETED, RECONFIGURE_USERNAME_PROMPT,
-                      pexpect.TIMEOUT, pexpect.EOF]
-            transitions = [
-                # Preparing system for backup. This may take a few minutes especially for large configurations.
-                (RELOAD, [0], 1, self._send_lf, 300),
-                (RELOAD_NA, [1], -1, self._reload_na, 0),
-                (DONE, [1], 2, None, 120),
-                (PROCEED, [2], 3, self._send_lf, reload_timeout),
-                (self.rommon_prompt, [0, 3], 4, self._send_boot, 600),
-            ] + transitions_shared
+        transitions = [
+            # Preparing system for backup. This may take a few minutes especially for large configurations.
+            (RELOAD, [0], 1, self._send_lf, 300),
+            (RELOAD_NA, [1], -1, self._reload_na, 0),
+            (DONE, [1], 2, None, 120),
+            (PROCEED, [2], 3, self._send_lf, reload_timeout),
+            (self.rommon_prompt, [0, 3], 4, self._send_boot, 600),
+        ] + transitions_shared
 
         fs = FSM("RELOAD", self.ctrl, events, transitions, timeout=10)
         return fs.run()

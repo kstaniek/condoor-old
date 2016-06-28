@@ -78,12 +78,13 @@ class SSH(Protocol):
             more = "!@#!@#"  # find another solution
             password_prompt = PASSWORD_PROMPT
 
+
         events = [password_prompt, prompt, UNABLE_TO_CONNECT, RESET_BY_PEER,
                   NEWSSHKEY, KNOWN_HOSTS, HOST_KEY_FAILED, MODULUS_TOO_SMALL, PROTOCOL_DIFFER,
                   pexpect.TIMEOUT]
 
         transitions = [
-            (password_prompt, [0, 1, 4], -1, self.save_pattern, 0),
+            (password_prompt, [0, 1, 4, 5], -1, self.save_pattern, 0),
             (prompt, [0], -1, self.save_pattern, 0),
             #  cover all messages indicating that connection was not set up
             (UNABLE_TO_CONNECT, [0], -1, self.unable_to_connect, 0),
@@ -99,7 +100,7 @@ class SSH(Protocol):
             (pexpect.TIMEOUT, [5], -1, ConnectionTimeoutError("Connection timeout", self.hostname), 0)
 
         ]
-        sm = FSM("SSH-CONNECT", self.ctrl, events, transitions, timeout=30)
+        sm = FSM("SSH-CONNECT", self.ctrl, events, transitions, timeout=30, searchwindowsize=160)
         return sm.run()
 
     def authenticate(self, prompt=None):
@@ -120,6 +121,7 @@ class SSH(Protocol):
             (PRESS_RETURN, [0, 1], 1, self.send_new_line, 10),
             (password_prompt, [0], 1, self.send_pass, 20),
             (password_prompt, [1], -1, ConnectionAuthenticationError("Authentication error", self.hostname), 0),
+            #(prompt, [0, 1], 0, None, 1),
             (prompt, [0, 1], -1, None, 0),
             (pexpect.TIMEOUT, [1], -1,
              ConnectionError("Error getting device prompt") if self.ctrl.is_target else self.send_new_line, 0)

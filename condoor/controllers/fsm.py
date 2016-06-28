@@ -31,6 +31,7 @@ import logging
 from functools import wraps
 from pexpect import EOF
 from time import time
+from re import _pattern_type
 
 from ..exceptions import \
     ConnectionError
@@ -111,7 +112,7 @@ class FSM(object):
             return "FSM Context:E={},S={},FI={},M='{}'".format(
                 self.event, self.state, self.finished, self.msg)
 
-    def __init__(self, name, ctrl, events, transitions, init_pattern=None, timeout=300):
+    def __init__(self, name, ctrl, events, transitions, init_pattern=None, timeout=300, searchwindowsize=-1):
         """This is a FSM class constructor.
 
         Args:
@@ -121,6 +122,7 @@ class FSM(object):
             transitions (list): List of tuples in defining the state machine transitions.
             init_pattern (str): The pattern that was expected in the previous operation.
             timeout (int): Timeout between states in seconds. Defaults to 300 seconds.
+            searchwindowsize (int): The size of search window. Defaults to -1.
 
         The transition tuple format is as follows::
 
@@ -136,6 +138,7 @@ class FSM(object):
         self.events = events
         self.ctrl = ctrl
         self.timeout = timeout
+        self.searchwindowsize = searchwindowsize
         self.name = name
         self.init_pattern = init_pattern
         self.logger = logging.getLogger('condoor.fsm')
@@ -145,7 +148,7 @@ class FSM(object):
     def _compile(self, transitions, events):
         compiled = {}
         for transition in transitions:
-            event, states, new_state, action, timeout = transition
+            event, states, new_state, act, timeout = transition
             if not isinstance(states, list):
                 states = list(states)
             try:
@@ -156,7 +159,7 @@ class FSM(object):
             else:
                 for state in states:
                     key = (event_index, state)
-                    compiled[key] = (new_state, action, timeout)
+                    compiled[key] = (new_state, act, timeout)
 
         return compiled
 
@@ -175,7 +178,7 @@ class FSM(object):
             try:
                 start_time = time()
                 if self.init_pattern is None:
-                    ctx.event = self.ctrl.expect(self.events, timeout=timeout)
+                    ctx.event = self.ctrl.expect(self.events, searchwindowsize=self.searchwindowsize, timeout=timeout)
                 else:
                     if isinstance(self.init_pattern, str):
                         self._dbg(10, "INIT_PATTERN={}".format(self.init_pattern.encode('string_escape')))
