@@ -50,14 +50,15 @@ _INCOMPLETE_COMMAND = "Incomplete command."
 _CONNECTION_CLOSED = "Connection closed"
 
 prompt_patterns = {
-    'IOSXR': re.compile('(RP/\d+/RS?P[0-1]/CPU[0-3]:.*?)(\([^()]*\))?#'),
+    'XR': re.compile('(RP/\d+/RS?P[0-1]/CPU[0-3]:.*?)(\([^()]*\))?#'),
+    'XR64': re.compile('(RP/\d+/RS?P[0-1]/CPU[0-3]:.*?)(\([^()]*\))?#'),
     'CALVADOS': re.compile("sysadmin-vm:[0-3]_RS?P[0-1]#"),
     'ROMMON': re.compile("rommon [A|B]?\d+ >"),
     'IOS': re.compile('[\w\-]+[#|>]'),
     'NX-OS': re.compile('[\w\-]+# '),
 }
 
-os_types = ['IOSXR', 'CALVADOS', 'ROMMON', 'IOS', 'NX-OS']
+os_types = ['XR', 'CALVADOS', 'ROMMON', 'IOS', 'NX-OS']
 
 
 class Connection(object):
@@ -122,7 +123,7 @@ class Connection(object):
         if not self.connected:
             self.ctrl = self.ctrl_class(self, self.hostname, self.hosts, self.account_manager, logfile=logfile)
             self._info("Connecting to {} using {} driver".format(self.__repr__(), self.platform))
-        self.connected = self.ctrl.connect()
+            self.connected = self.ctrl.connect()
 
         if self.connected:
             self._info("Connected to {}".format(self.__repr__()))

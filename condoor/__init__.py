@@ -54,7 +54,7 @@ __all__ = ['make_connection_from_urls', 'Connection', 'FSM', 'TIMEOUT', 'action'
            'CommandSyntaxError', 'ConnectionAuthenticationError']
 
 drivers = {
-    "ASR9K": ["ASR9K", "CRS", "NCS6K", "NCS4K", "CRS", "NCS5K", "NCS5500"],
+    "XR": ["ASR9K", "CRS", "NCS6K", "NCS4K", "CRS", "NCS5K", "NCS5500"],
     "IOS": ["ASR900"],
     "NX-OS": ["N9K"],
     "generic": ["generic"]
@@ -137,6 +137,7 @@ class Connection(object):
         self._driver = None
         self._name = name
         self._hostname = name
+        self._discovered = False
 
         # normalise the urls to the list of the lists of str (for multiple console connections to the device)
         if isinstance(urls, list):
@@ -224,21 +225,22 @@ class Connection(object):
                 self._session_fd = logfile if isinstance(logfile, file) else None
 
     def _get_driver_name(self):
-        for driver_name, families in drivers.iteritems():
-            if self._family in families:
-                return driver_name
-        else:
-            return 'generic'
+        """
+        Returns driver name based on the detected os type
+        """
+        driver_name = 'generic'
+        if self._os_type in ["XR"]:
+            driver_name = 'XR'
+        elif self._os_type in ["eXR"]:
+            driver_name = 'XR64'
+        elif self._os_type in ["IOS", "XE"]:
+            driver_name = 'IOS'
+        elif self._os_type in ['NX-OS']:
+            driver_name = 'NX-OS'
+
+        return driver_name
 
     def _init_driver(self, driver_name='generic'):
-
-        if driver_name == 'generic':
-            if self._os_type in ["eXR", "XR"]:
-                driver_name = 'ASR9K'  # TODO: change the driver name to IOSXR
-            elif self._os_type in ["IOS", "XE"]:
-                driver_name = 'IOS'
-            elif self._os_type in ['NX-OS']:
-                driver_name = 'NX-OS'
 
         module_str = 'condoor.platforms.%s' % driver_name
         try:
@@ -409,13 +411,21 @@ class Connection(object):
 
         self._prompt = self._driver.prompt
         self._is_console = self._detect_console()
-        self._driver.disconnect()
+
+        ctrl = self._driver.ctrl
+        ##self._driver.disconnect()
 
         driver_name = self._get_driver_name()
+        self.logger.debug("Using driver: '{}'".format(driver_name))
+
         if driver_name == 'generic':
             raise RuntimeError("Platform {} not supported".format(self.family))
 
         self._init_driver(driver_name)
+        self._driver.ctrl = ctrl
+        self._driver.connected = True
+
+
         self._driver.determine_hostname(self._prompt)
 
         self._hostname = self._driver.hostname
@@ -432,6 +442,7 @@ class Connection(object):
         self.logger.info("SN: {}".format(self.udi['sn']))
         self.logger.info("Prompt: '{}'".format(self._prompt))
         self.logger.info("Is connected to console: {}".format(self.is_console))
+        self._discovered = True
 
     def store_property(self, key, value):
         """This method stores a *value* identified by the *key* in the :class:`Connection` object.
@@ -474,7 +485,11 @@ class Connection(object):
 
         """
         self._set_default_log_fd(logfile)
-        self._init_driver()
+        if not self._discovered:
+            self.discovery(logfile=logfile)
+            self.logger.info("Discovery phase done")
+
+        self.logger.debug("Driver: {}".format(self._driver.platform))
         no_hosts = len(self._nodes)
         result = False
         for i in xrange(no_hosts):
@@ -546,7 +561,7 @@ class Connection(object):
             pass
         finally:
             if self._session_fd:
-                self._session_fd.close()
+                self._session_fd = None
 
     @property
     def platform(self):
