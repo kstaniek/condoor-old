@@ -546,7 +546,7 @@ class Connection(object):
             pass
         finally:
             if self._session_fd:
-                self._session_fd.close()
+                self._session_fd = None
 
     @property
     def platform(self):
