@@ -32,6 +32,7 @@ import re
 import logging
 import time
 import shelve
+import hashlib
 
 from hopinfo import make_hop_info_from_url
 from controllers.pexpect_ctrl import Controller
@@ -53,6 +54,8 @@ This is a python module providing access to Cisco devices over Telnet and SSH.
 __all__ = ['make_connection_from_urls', 'Connection', 'FSM', 'TIMEOUT', 'action',
            'CommandTimeoutError', 'ConnectionError', 'ConnectionTimeoutError', 'CommandError',
            'CommandSyntaxError', 'ConnectionAuthenticationError']
+
+_cache_file = "/tmp/condoor.shelve"
 
 drivers = {
     "XR": ["ASR9K", "CRS", "NCS6K", "NCS4K", "CRS", "NCS5K", "NCS5500"],
@@ -444,16 +447,36 @@ class Connection(object):
         self.logger.info("Is connected to console: {}".format(self.is_console))
         self._discovered = True
 
-        key = str(self._nodes[-1])
-        cache = None
+    def _get_key(self):
+        m = hashlib.md5()
+        m.update(str(self._nodes))
+        return m.hexdigest()
+
+    def _write_cache(self):
         try:
-            cache = shelve.open("/tmp/condoor.shelve")
+            cache = shelve.open(_cache_file)
         except Exception:
-            cache = None
+            self.logger.error("Unable to open a cache file")
+            return
+
+        cache[self._get_key()] = self.device_description_record
+        self.logger.info("Device description record cached")
+        cache.close()
+
+    def _read_cache(self):
+        try:
+            cache = shelve.open(_cache_file)
+        except Exception:
             self.logger.error("Unable to open cache file")
-        if cache:
-            cache[key] = self.device_description_record
-            self.logger.info("Device description record stored in the cache")
+            return
+
+        try:
+            self.device_description_record = cache[self._get_key()]
+            self.logger.info("Use cached device description record")
+            self._discovered = True
+        except KeyError:
+            self.logger.debug("Device cache missed")
+        finally:
             cache.close()
 
     def store_property(self, key, value):
@@ -481,8 +504,7 @@ class Connection(object):
         return self._info.get(key, None)
 
     def connect(self, logfile=None):
-        """This method connects to the device. The discovery method must be called first. If not then
-        :class:`ConnectionError` is raised
+        """This method connects to the device.
 
         Args:
             logfile (file): Optional file descriptor for session logging. The file must be open for write.
@@ -497,29 +519,12 @@ class Connection(object):
 
         """
 
-        key = str(self._nodes[-1])
-
-        try:
-            cache = shelve.open("/tmp/condoor.shelve")
-        except Exception:
-            cache = None
-            self.logger.error("Unable to open cache file")
-
-        if cache:
-            try:
-                self.device_description_record = cache[key]
-                self.logger.info("Used cached device description record")
-                self._discovered = True
-            except KeyError:
-                self.logger.debug("Node cache missed.")
-            finally:
-                cache.close()
+        self._read_cache()
 
         self._set_default_log_fd(logfile)
         if not self._discovered:
             self.discovery(logfile=logfile)
             self.logger.info("Discovery phase done")
-
 
         self.logger.debug("Driver: {}".format(self._driver.platform))
         no_hosts = len(self._nodes)
@@ -541,6 +546,7 @@ class Connection(object):
             # This will never be executed
             raise ConnectionError("Unable to connect to the device")
 
+        self._write_cache()
         return result
 
     def reconnect(self, max_timeout=360, logfile=None):
@@ -620,7 +626,8 @@ class Connection(object):
     def prompt(self):
         """Returns the target device prompt if detected or *None*."""
         try:
-            return self._driver.prompt
+            #return self._driver.prompt
+            return self._prompt
         except AttributeError:
             return None
 
@@ -719,12 +726,16 @@ class Connection(object):
             'device_info': self.device_info,
             'udi': self.udi,
             'hostname': self.hostname,
-            'console': self.is_console
+            'console': self.is_console,
+            'prompts': [prompt.pattern for prompt in self._driver.compiled_prompts]
         }
 
     @device_description_record.setter
     def device_description_record(self, ddr):
-        self._init_driver(ddr['driver_name'])
+        driver_name = ddr['driver_name']
+        if driver_name != self._get_driver_name():
+            self._init_driver(driver_name)
+
         self._hostname = ddr['hostname']
         self._is_console = ddr['console']
         di = ddr['device_info']
@@ -733,5 +744,6 @@ class Connection(object):
         self._os_type = di['os_type']
         self._os_version = di['os_version']
         self._udi = ddr['udi']
+        #print("PROMPTS: {}".format(ddr['prompts']))
 
 
