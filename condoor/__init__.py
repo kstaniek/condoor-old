@@ -173,7 +173,7 @@ class Connection(object):
         self._prompt = None
         self._log_dir = log_dir
         self._log_session = log_session
-        self.logger = logging.getLogger('condoor')
+        self.logger = logging.getLogger('condoor-{}'.format(id(self)))
         self._info = {}
         self._is_console = False
 
@@ -454,9 +454,9 @@ class Connection(object):
 
     def _write_cache(self):
         try:
-            cache = shelve.open(_cache_file)
+            cache = shelve.open(_cache_file, 'w')
         except Exception:
-            self.logger.error("Unable to open a cache file")
+            self.logger.error("Unable to open a cache file for write")
             return
 
         cache[self._get_key()] = self.device_description_record
@@ -465,9 +465,9 @@ class Connection(object):
 
     def _read_cache(self):
         try:
-            cache = shelve.open(_cache_file)
+            cache = shelve.open(_cache_file, 'r')
         except Exception:
-            self.logger.error("Unable to open cache file")
+            self.logger.error("Unable to open cache file for read")
             return
 
         try:
