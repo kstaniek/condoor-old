@@ -454,7 +454,7 @@ class Connection(object):
 
     def _write_cache(self):
         try:
-            cache = shelve.open(_cache_file, 'w')
+            cache = shelve.open(_cache_file, 'c')
         except Exception:
             self.logger.error("Unable to open a cache file for write")
             return
