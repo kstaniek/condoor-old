@@ -99,8 +99,12 @@ class Connection(object):
         self._os_type = 'unknown'
         self.mode = None
         self.compiled_prompts = []
-        for _ in hosts:
+        for _ in xrange(len(self.hosts) + 1):
             self.compiled_prompts.append(None)
+        self.compiled_prompts[0] = "FaKePrOmPt"
+
+        #for _ in hosts:
+        #    self.compiled_prompts.append(None)
 
     def __repr__(self):
         name = ""
@@ -122,6 +126,8 @@ class Connection(object):
 
         if not self.connected:
             self.ctrl = self.ctrl_class(self, self.hostname, self.hosts, self.account_manager, logfile=logfile)
+            self.ctrl.logger = self.logger
+            self.ctrl.detected_prompts = self.compiled_prompts
             self._info("Connecting to {} using {} driver".format(self.__repr__(), self.platform))
             self.connected = self.ctrl.connect()
 

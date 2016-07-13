@@ -129,8 +129,9 @@ class Controller(object):
                             if protocol.authenticate(self.detected_prompts[hop]):
                                 connected = True
                                 if detect_prompt:
-                                    if not protocol.detect_prompt():
-                                        connected = False
+                                    if not self.detected_prompts[hop]:
+                                        if not protocol.detect_prompt():
+                                            connected = False
                         else:
                             connected = False
                     except ConnectionTimeoutError as e:

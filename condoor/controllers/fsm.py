@@ -141,7 +141,7 @@ class FSM(object):
         self.searchwindowsize = searchwindowsize
         self.name = name
         self.init_pattern = init_pattern
-        self.logger = logging.getLogger('condoor.fsm')
+        self.logger = ctrl.logger  # logging.getLogger('condoor.fsm')
 
         self.transition_table = self._compile(transitions, events)
 

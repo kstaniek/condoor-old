@@ -84,7 +84,7 @@ class Protocol(object):
         self.username = username
         self.prompt = ""
         self.last_pattern = None
-        self.logger = logging.getLogger("condoor.controller.protocol")
+        self.logger = controller.logger  # logging.getLogger("condoor.controller.protocol")
 
     def _spawn_session(self, command):
         self._dbg(10, "Executing command: '{}'".format(command))

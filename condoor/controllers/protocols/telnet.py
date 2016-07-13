@@ -122,6 +122,7 @@ class Telnet(Protocol):
             (rommon_prompt, [0], -1, self.send_new_line, 0),
             (pexpect.TIMEOUT, [0], 1, self.send_new_line, 10),
             (pexpect.TIMEOUT, [2], -1, None, 0),
+            # TODO: (klstanie): Clean up this mess. State never being used
             (pexpect.TIMEOUT, [6], -1, ConnectionError("Unable to get shell prompt", self.hostname), 0),
             (pexpect.TIMEOUT, [3, 7], -1,  ConnectionTimeoutError("Connection Timeout", self.hostname), 0),
         ]
