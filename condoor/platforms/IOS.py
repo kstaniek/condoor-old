@@ -48,7 +48,8 @@ class Connection(generic.Connection):
     command_syntax_re = re.compile('\% Bad IP address or host name% Unknown command or computer name, '
                                    'or unable to find computer address|'
                                    '\% Ambiguous command:.*"|'
-                                   '\% Type "show \?" for a list of subcommands')
+                                   '\% Type "show \?" for a list of subcommands|'
+                                   "% Invalid input detected at '\^' marker\.")
 
     platform_prompt = generic.prompt_patterns['IOS']
 
