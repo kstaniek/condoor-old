@@ -42,7 +42,7 @@ from condoor.controllers.fsm import FSM, action
 from condoor.exceptions import CommandTimeoutError, ConnectionError, ConnectionTimeoutError, CommandError, \
     CommandSyntaxError, ConnectionAuthenticationError, GeneralError, InvalidHopInfoError
 
-__version__ = '0.0.9'
+__version__ = '0.1.0'
 
 """
 This is a python module providing access to Cisco devices over Telnet and SSH.
