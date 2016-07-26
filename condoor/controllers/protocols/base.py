@@ -30,7 +30,6 @@
 import re
 import pexpect
 import time
-import logging
 
 from ...exceptions import \
     ConnectionAuthenticationError, \
@@ -187,13 +186,13 @@ class Protocol(object):
         if n > m:
             a, b = b, a
             n, m = m, n
-        current = range(n+1)
-        for i in range(1, m+1):
-            previous, current = current, [i]+[0]*n
-            for j in range(1, n+1):
-                add, delete = previous[j]+1, current[j-1]+1
-                change = previous[j-1]
-                if a[j-1] != b[i-1]:
+        current = range(n + 1)
+        for i in range(1, m + 1):
+            previous, current = current, [i] + [0] * n
+            for j in range(1, n + 1):
+                add, delete = previous[j] + 1, current[j - 1] + 1
+                change = previous[j - 1]
+                if a[j - 1] != b[i - 1]:
                     change += + 1
                 current[j] = min(add, delete, change)
         return current[n]
@@ -231,7 +230,7 @@ class Protocol(object):
             if len_a == 0:
                 continue
 
-            if float(ld)/len_a < 0.3:
+            if float(ld) / len_a < 0.3:
                 self.prompt = b.splitlines(True)[-1]
                 self._dbg(10, "Detected prompt: '{}'".format(self.prompt))
                 compiled_prompt = re.compile("(\r\n|\n\r){}".format(re.escape(self.prompt)))

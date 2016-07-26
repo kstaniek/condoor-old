@@ -98,7 +98,6 @@ class Connection(generic.Connection):
             raise
             self._warning("Unable to extract hostname from prompt: {}".format(prompt))
 
-
     def boot(self):
         pass
 
@@ -205,13 +204,13 @@ class Connection(generic.Connection):
 
     @action
     def _authenticate(self, ctx):
-        ctx.ctrl.connect(start_hop=len(ctx.ctrl.hosts)-1, spawn=False, detect_prompt=False)
+        ctx.ctrl.connect(start_hop=len(ctx.ctrl.hosts) - 1, spawn=False, detect_prompt=False)
         return True
 
     @action
     def _return_and_authenticate(self, ctx):
         self._send_lf(ctx)
-        ctx.ctrl.connect(start_hop=len(ctx.ctrl.hosts)-1, spawn=False, detect_prompt=False)
+        ctx.ctrl.connect(start_hop=len(ctx.ctrl.hosts) - 1, spawn=False, detect_prompt=False)
         return True
 
     @action

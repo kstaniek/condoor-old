@@ -103,7 +103,7 @@ class Controller(object):
 
         self._dbg(10, "Restarting from hop: {}".format(start_hop))
 
-        for hop, host in enumerate(hosts, start=start_hop+1):
+        for hop, host in enumerate(hosts, start=start_hop + 1):
             if hop == host_count:
                 self.is_target = True
 

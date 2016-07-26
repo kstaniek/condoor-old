@@ -31,7 +31,6 @@ import logging
 from functools import wraps
 from pexpect import EOF
 from time import time
-from re import _pattern_type
 
 from ..exceptions import \
     ConnectionError

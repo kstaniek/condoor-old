@@ -42,9 +42,9 @@ from pexpect import TIMEOUT
 from condoor.controllers.fsm import FSM, action
 
 from condoor.exceptions import CommandTimeoutError, ConnectionError, ConnectionTimeoutError, CommandError, \
-    CommandSyntaxError, ConnectionAuthenticationError, GeneralError, InvalidHopInfoError
+    CommandSyntaxError, ConnectionAuthenticationError, GeneralError
 
-__version__ = '0.0.8'
+__version__ = '1.0.0'
 
 """
 This is a python module providing access to Cisco devices over Telnet and SSH.
@@ -322,7 +322,6 @@ class Connection(object):
             if match:
                 self._os_type = "eXR"
 
-        #match = re.search("^[ ?]cisco (.*?) ", show_version, re.MULTILINE)  # NX-OS
         match = re.search("^(  )?cisco (.*?) ", show_version, re.MULTILINE)  # NX-OS
         if match:
             self.logger.debug("Platform string: {}".format(match.group()))
@@ -618,15 +617,12 @@ class Connection(object):
     @property
     def family(self):
         """Returns the string representing hardware platform family. For example: ASR9K, ASR900, NCS6K, etc."""
-        #if self._family == 'generic':
-        #    self.discovery()
         return self._family
 
     @property
     def prompt(self):
         """Returns the target device prompt if detected or *None*."""
         try:
-            #return self._driver.prompt
             return self._prompt
         except AttributeError:
             return None
@@ -747,5 +743,3 @@ class Connection(object):
         print("PROMPTS: {}".format(ddr['prompts']))
         self._driver.platform_prompt = ddr['prompts'][-1]
         self._driver.compiled_prompts = ddr['prompts']
-
-

@@ -98,7 +98,6 @@ class Connection(generic.Connection):
             raise
             self._warning("Unable to extract hostname from prompt: {}".format(prompt))
 
-
     def boot(self):
         pass
 
@@ -157,8 +156,7 @@ class Connection(generic.Connection):
         self.ctrl.sendline(RELOAD)
 
         events = [RELOAD_NA, RELOAD, CONFIRM_RELOAD, DONE, STBY_CONSOLE, CONFIGURATION_IN_PROCESS, self.press_return,
-              CONSOLE, CONFIGURATION_COMPLETED, RECONFIGURE_USERNAME_PROMPT,
-              pexpect.TIMEOUT, pexpect.EOF]
+                  CONSOLE, CONFIGURATION_COMPLETED, RECONFIGURE_USERNAME_PROMPT, pexpect.TIMEOUT, pexpect.EOF]
 
         transitions = [
             # Preparing system for backup. This may take a few minutes especially for large configurations.
@@ -210,13 +208,13 @@ class Connection(generic.Connection):
 
     @action
     def _authenticate(self, ctx):
-        ctx.ctrl.connect(start_hop=len(ctx.ctrl.hosts)-1, spawn=False, detect_prompt=False)
+        ctx.ctrl.connect(start_hop=len(ctx.ctrl.hosts) - 1, spawn=False, detect_prompt=False)
         return True
 
     @action
     def _return_and_authenticate(self, ctx):
         self._send_lf(ctx)
-        ctx.ctrl.connect(start_hop=len(ctx.ctrl.hosts)-1, spawn=False, detect_prompt=False)
+        ctx.ctrl.connect(start_hop=len(ctx.ctrl.hosts) - 1, spawn=False, detect_prompt=False)
         return True
 
     @action

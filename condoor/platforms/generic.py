@@ -103,9 +103,6 @@ class Connection(object):
             self.compiled_prompts.append(None)
         self.compiled_prompts[0] = "FaKePrOmPt"
 
-        #for _ in hosts:
-        #    self.compiled_prompts.append(None)
-
     def __repr__(self):
         name = ""
         for host in self.hosts:
@@ -354,7 +351,6 @@ class Connection(object):
 
     def prepare_terminal_session(self):
         self.send('terminal len 0')
-        #self.send('terminal width 0')
 
     def _compile_prompts(self):
         self.compiled_prompts = [re.compile(re.escape(prompt)) for prompt in self.ctrl.detected_prompts]

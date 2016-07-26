@@ -30,10 +30,6 @@ import logging
 import re
 
 import generic
-from ..exceptions import ConnectionError, ConnectionAuthenticationError
-
-from ..controllers.fsm import FSM, action
-import pexpect
 
 _logger = logging.getLogger(__name__)
 
@@ -54,10 +50,6 @@ class Connection(generic.Connection):
     standby_console = re.compile("\(standby\)")
 
     def prepare_prompt(self):
-        mode = self.ctrl.detected_target_prompt[-1]
-
-        # previously: '({})(\([^()]*\))?[#|>]'
-        # It is assumed that session stays in privilege mode
         prompt_re = re.compile('({})(\([^()]*\))?#'.format(
             re.escape(self.ctrl.detected_target_prompt[:-1])))
         self.compiled_prompts[-1] = prompt_re

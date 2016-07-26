@@ -27,12 +27,16 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-from base import *
+from base import Protocol, PASSWORD_OK, PRESS_RETURN, RESET_BY_PEER, UNABLE_TO_CONNECT, SHELL_PROMPT, PASSWORD_PROMPT,\
+    USERNAME_PROMPT, AUTH_FAILED, PERMISSION_DENIED
 from ..fsm import FSM, action
 
 from ...exceptions import \
     ConnectionError, \
     ConnectionTimeoutError
+
+import re
+import pexpect
 
 # Telnet connection initiated
 ESCAPE_CHAR = "Escape character is|Open"
@@ -124,7 +128,7 @@ class Telnet(Protocol):
             (pexpect.TIMEOUT, [2], -1, None, 0),
             # TODO: (klstanie): Clean up this mess. State never being used
             (pexpect.TIMEOUT, [6], -1, ConnectionError("Unable to get shell prompt", self.hostname), 0),
-            (pexpect.TIMEOUT, [3, 7], -1,  ConnectionTimeoutError("Connection Timeout", self.hostname), 0),
+            (pexpect.TIMEOUT, [3, 7], -1, ConnectionTimeoutError("Connection Timeout", self.hostname), 0),
         ]
 
         if isinstance(prompt, str):
