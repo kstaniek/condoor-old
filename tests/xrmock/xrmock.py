@@ -32,6 +32,7 @@ from telnetsrv.threaded import TelnetHandler, command
 import SocketServer
 import os
 import threading
+import sys
 
 
 class TelnetServer(SocketServer.TCPServer):
@@ -43,11 +44,17 @@ class XRHandler(TelnetHandler):
     WELCOME = "\n"
     PROMPT = "RP/0/RP0/CPU0:ios#"
     TELNET_ISSUE = "\nUser Access Verification\n"  # does not work
+    AUTH_MESSAGE = "\nUser Access Verification\n"
     authNeedUser = True
     authNeedPass = True
     response_dict = {}
+    action_dict = {}
+    username = "admin"
+    password = "admin"
+    PROMPT_USER = "Username: "
+    PROMPT_PASS = "Password: "
 
-    @command('show', 'admin')
+    @command(['show', 'admin'])
     def cmd(self, params):
         params.insert(0, self.input.cmd)
         command_line = "_".join(params)
@@ -67,13 +74,6 @@ class XRHandler(TelnetHandler):
             if action:
                 action()
 
-    @command('admin')
-    def admin(self, params):
-        filename = os.path.join(self.platform.lower(), "admin_" + "_".join(params) + ".txt")
-        with open(filename) as f:
-            output = f.read()
-            self.writeresponse(output)
-
     @command('terminal')
     def terminal(self, params):
         """
@@ -81,20 +81,15 @@ class XRHandler(TelnetHandler):
         """
         pass
 
-    def setup(self):
-        '''Called after instantiation'''
-        TelnetHandler.setup(self)
-        self.writeline("\nUser Access Verification\n")
-
     def authCallback(self, username, password):
-        if username != "admin" or password != "admin": #Security comes first
-            self.writeresponse("\n% Authentication failed")
+        if username != self.username or password != self.password:
             raise Exception()
 
     def get_response(self, command_line):
         response = self.response_dict.get(command_line, None)
         if response is None:
-            filename = os.path.join(self.platform.lower(), command_line + ".txt")
+            directory = os.path.dirname(os.path.realpath(__file__))
+            filename = os.path.join(directory, self.platform.lower(), command_line + ".txt")
             try:
                 with open(filename) as f:
                     response = f.read()
@@ -108,6 +103,56 @@ class XRHandler(TelnetHandler):
         if data:
             action_name = data.get(when, None)
         return action_name
+
+    def authentication_ok(self):
+        for _ in range(3):
+            self.writeline("\nUser Access Verification\n")
+            result = TelnetHandler.authentication_ok(self)
+            if result:
+                break
+        else:
+            self.writeresponse("\n% Authentication failed")
+
+        return result
+
+    def authentication_ok(self):
+        '''Checks the authentication and sets the username of the currently connected terminal.  Returns True or False'''
+        username = None
+        password = None
+        for _ in range(3):
+            self.writeline("\nUser Access Verification\n")
+            if self.authCallback:
+                if self.authNeedUser:
+                    username = self.readline(prompt=self.PROMPT_USER, use_history=False)
+                    if username == 'QUIT':
+                        self.RUNSHELL = False
+                        return True
+
+                if self.authNeedPass:
+                    password = self.readline(echo=False, prompt=self.PROMPT_PASS, use_history=False)
+                    if password == 'QUIT':
+                        self.RUNSHELL = False
+                        return True
+
+                    if self.DOECHO:
+                        self.write("\n")
+                try:
+                    self.authCallback(username, password)
+                except:
+                    self.username = None
+                    continue
+
+                else:
+                    # Successful authentication
+                    self.username = username
+                    return True
+            else:
+                # No authentication desired
+                self.username = None
+                return True
+        else:
+            self.writeresponse("\n% Authentication failed")
+            return False
 
 
 class NCS1KHandler(XRHandler):
@@ -126,12 +171,12 @@ class NCS1KHandler(XRHandler):
 """
 Usage example in test cases
 """
-if __name__ == '__main__':
-    server = TelnetServer(("127.0.0.1", 10023), NCS1KHandler)
-    server_thread = threading.Thread(target=server.serve_forever)
-    server_thread.daemon = True
-    server_thread.start()
-    raw_input("Press ENTER to stop")
-    server.shutdown()
-    server.server_close()
+#if __name__ == '__main__':
+#    server = TelnetServer(("127.0.0.1", 10023), NCS1KHandler)
+#    server_thread = threading.Thread(target=server.serve_forever)
+#    server_thread.daemon = True
+#    server_thread.start()
+#    raw_input("Press ENTER to stop")
+#    server.shutdown()
+#    server.server_close()
 

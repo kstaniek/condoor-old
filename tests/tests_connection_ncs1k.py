@@ -25,3 +25,59 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
+
+
+from unittest import TestCase
+
+from xrmock.xrmock import TelnetServer, XRHandler
+from threading import Thread
+
+import condoor
+import sys
+
+
+class NCS1KHandler(XRHandler):
+    platform = "NCS1K"
+    response_dict = {
+        'show_install_request': "10.77.132.127: Permission denied"
+    }
+    action_dict = {
+        'show_install_request': {'AFTER': 'disconnect'}
+    }
+
+    def disconnect(self):
+        self.RUNSHELL = False
+
+
+class TestNCS1KConnection(TestCase):
+
+    def setUp(self):
+        self.server = TelnetServer(("127.0.0.1", 10023), NCS1KHandler)
+        self.server_thread = Thread(target=self.server.serve_forever)
+        self.server_thread.daemon = True
+        self.server_thread.start()
+
+    def tearDown(self):
+        self.server.shutdown()
+        self.server.server_close()
+        self.server_thread.join()
+
+    def test_NCS1K_disovery(self):
+
+        urls = ["telnet://admin:admin@127.0.0.1:10023"]
+        conn = condoor.Connection("host", urls, log_session=True)
+        conn.discovery(sys.stderr)
+        conn.disconnect()
+
+    def test_NCS1K_connection_refused(self):
+        urls = ["telnet://admin:admin@127.0.0.1:10024"]
+        conn = condoor.Connection("host", urls, log_session=True)
+        with self.assertRaises(condoor.ConnectionError):
+            conn.discovery(sys.stderr)
+
+    def test_NCS1K_connection_wrong_user(self):
+        urls = ["telnet://root:admin@127.0.0.1:10023"]
+        conn = condoor.Connection("host", urls, log_session=True)
+        with self.assertRaises(condoor.ConnectionError):
+            conn.discovery(sys.stderr)
+

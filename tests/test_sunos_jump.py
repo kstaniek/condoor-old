@@ -25,3 +25,94 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
+
+from unittest import TestCase
+
+from xrmock.xrmock import TelnetServer, TelnetHandler, command
+from threading import Thread
+
+import condoor
+import sys
+
+
+class SunHandler(TelnetHandler):
+    PROMPT = "TEST "  # Intentionally wierd prompt
+    WELCOME = "Last login: Wed Jul 27 00:44:30 from localhost"
+
+    authNeedUser = True
+    authNeedPass = True
+    response_dict = {}
+    action_dict = {}
+    username = "admin"
+    password = "admin"
+    PROMPT_USER = "login:"
+    PROMPT_PASS = "This is your AD password:"
+
+    def authCallback(self, username, password):
+        if password != self.password:
+            raise Exception()
+
+    def authentication_ok(self):
+        username = None
+        password = None
+        for _ in range(1):
+            if self.authCallback:
+
+                if self.authNeedPass:
+                    password = self.readline(echo=False, prompt=self.PROMPT_PASS, use_history=False)
+                    if password == 'QUIT':
+                        self.RUNSHELL = False
+                        return True
+
+                    if self.DOECHO:
+                        self.write("\n")
+                try:
+                    self.authCallback(None, password)
+                except:
+                    self.username = None
+                    continue
+
+                else:
+                    # Successful authentication
+                    self.username = username
+                    return True
+            else:
+                # No authentication desired
+                self.username = None
+                return True
+        else:
+            self.writeresponse("Login incorrect")
+            return False
+
+    @command('telnet')
+    def telnet(self, params):
+        self.writeresponse("""Trying host1...
+Connected to host1.
+Escape character is '^]'.""")
+
+
+class TestSunConnection(TestCase):
+    def setUp(self):
+        self.server = TelnetServer(("127.0.0.1", 10023), SunHandler)
+        self.server_thread = Thread(target=self.server.serve_forever)
+        self.server_thread.daemon = True
+        self.server_thread.start()
+
+    def tearDown(self):
+        self.server.shutdown()
+        self.server.server_close()
+        self.server_thread.join()
+
+    def test_sun_connection(self):
+        urls = ["telnet://admin:admin@127.0.0.1:10023", "telnet://admin:admin@host1"]
+        conn = condoor.Connection("host", urls, log_session=True)
+
+        with self.assertRaises(condoor.ConnectionTimeoutError):
+            conn.connect(sys.stderr)
+
+    def test_sun_connection_wrong_passowrd(self):
+        urls = ["telnet://admin:wrong@127.0.0.1:10023", "telnet://admin:admin@host1"]
+        conn = condoor.Connection("host", urls, log_session=True)
+
+        with self.assertRaises(condoor.ConnectionAuthenticationError):
+            conn.connect(sys.stderr)
