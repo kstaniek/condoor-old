@@ -1,0 +1,3 @@
+Mon Jul 25 00:44:18.027 UTC
+   Line            User                 Service  Conns   Idle        Location
+*  vty0            admin                telnet       0  00:00:02     10.60.106.90

@@ -401,14 +401,16 @@ class Connection(object):
             self._init_driver()
 
         no_hosts = len(self._nodes)
+        excpt = ConnectionError("Unable to connect to the device")
         for _ in xrange(no_hosts):
             try:
                 self._driver.connect(logfile=self._session_fd)
                 break
-            except ConnectionError:
+            except ConnectionError as e:
                 self._shift_driver()
+                excpt = e
         else:
-            raise ConnectionError("Unable to connect to the device")
+            raise excpt
 
         self._update_device_info()
         self._update_udi()

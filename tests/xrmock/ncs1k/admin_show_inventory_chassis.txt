@@ -1,0 +1,11 @@
+Mon Jul 25 00:38:21.539 UTC
+
+root connected from 127.0.0.1 using console on xr-vm_node0_RP0_CPU0
+sysadmin-vm:0_RP0# terminal length 0
+Mon Jul  25 00:38:22.201 UTC
+sysadmin-vm:0_RP0# show inventory chassis
+Mon Jul  25 00:38:22.368 UTC
+
+ Name: Rack 0                Descr: Network Convergence System 1000 Controller
+ PID: NCS1002                VID: V01                   SN: CHANGE-ME-
+sysadmin-vm:0_RP0#
