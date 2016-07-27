@@ -40,9 +40,9 @@ from ..fsm import action
 
 
 # used for unix jumphosts
-PASSWORD_PROMPT = re.compile("[P|p]assword:\s?")
-USERNAME_PROMPT = re.compile("([U|u]sername:|login:)\s?")
-SHELL_PROMPT = re.compile("\$\s?|>\s?|#\s?|\%\s?")
+PASSWORD_PROMPT = re.compile("[P|p]assword:\s?$")
+USERNAME_PROMPT = re.compile("([U|u]sername:|login:)\s?$")
+SHELL_PROMPT = re.compile("\$\s?|>\s?|#\s?|%\s?")
 
 PERMISSION_DENIED = "Permission denied"
 AUTH_FAILED = "Authentication failed|not authorized|Login incorrect"
@@ -61,7 +61,8 @@ UNABLE_TO_CONNECT = "nodename nor servname provided, or not known|" \
                     "[Operation|Connection] timed out|" \
                     "[D|d]estination unreachable|" \
                     "[U|u]nable to connect|" \
-                    "[C|c]onnection refused"
+                    "[C|c]onnection refused|" \
+                    "command not found"
 
 
 class Protocol(object):
