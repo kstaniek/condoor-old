@@ -12,6 +12,7 @@ deploy:
   user: kstaniek
   password:
     secure: VZ6p3m+vzh2ybW7R3+vKLaIWzDUUzLHChlpL+VkCPrRufsq6oULKotZ3+yNGnoMTxUdFMLL79iHBowTyL9/FQ0aa+QM8GKgrx56UCytWxdfhvchBjGxIoDm6nw8qge/GCRiHkpUGcLEtmsxfII7Y7WIXtvwVNVFXlz+Dbqco7+l13Tl6oLO5w8uVV7ZVjD+Epp0tx+dWmKPqahKankw4WQi6epZUSR7cYC+SY1gEBUAqykA6l7F2i6pdAcMzHc+3RJ0HmNed9b8a6xZ9z26UgciAPRDQYN+C/kVAUGkPk0HShRJrv7/Jpf+plI3C3DDAQI6iyJOcH75XsCtjZn53Fchk/kp+NwnDol1wrwsirjMZiZwfTUE/+XXS+DdY/fkSnc1ah19bVCRzZ0kC5ZbvMsYv7ATPUGGJm5bKBTTw2V9JgfL3OpJicpW80hVdcETgG9Ch6VwQJpWWObEXdGKLzFf6iefEBlZBStCFzpmJAYyqaFVUgZbUGXWYjpb1aO9756rtho8MG9BBOb70cFY1yxpLl5nyq9ZXGnoDm/v70s+00MUE4CT5qkIp9TcljgxruT+PKSObKo6Xb5B1/2u17XzC0KzuC9qTRU3hWeUn1oNoiPR8N/q76P8/EMBSGlR9Rarcgy1oOc2o2vazy2lSjki63/6zZ0/b9Xw4qQtGs34=
+  skip_cleanup: true
   on:
     tags: true
     distributions: sdist bdist_wheel
