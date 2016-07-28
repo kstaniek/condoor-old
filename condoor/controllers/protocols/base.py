@@ -43,7 +43,8 @@ from ..fsm import action
 # used for unix jumphosts
 PASSWORD_PROMPT = re.compile("[P|p]assword:\s?")
 USERNAME_PROMPT = re.compile("([U|u]sername:|login:)\s?")
-SHELL_PROMPT = re.compile("\$\s?|>\s?|#\s?|\%\s?")
+# [sj20lab-as2:~] Cisco Linux - Red Hat Enterprise Linux Server release 6.6 (Santiago)
+SHELL_PROMPT = re.compile("\$\s?|>\s?|#\s?|%\s?|\[.*:~\]")
 
 PERMISSION_DENIED = "Permission denied"
 AUTH_FAILED = "Authentication failed|not authorized|Login incorrect"
