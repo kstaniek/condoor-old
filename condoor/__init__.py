@@ -210,10 +210,13 @@ class Connection(object):
         self.logger.addHandler(self._handler)
         self.logger.setLevel(log_level)
 
-        try:
-            self._session_fd = open(os.path.join(log_dir, 'session.log'), mode="w")
-        except IOError:
-            self._session_fd = None
+        self._session_fd = None
+
+        if log_dir is not None:
+            try:
+                self._session_fd = open(os.path.join(log_dir, 'session.log'), mode="w")
+            except IOError:
+                self._session_fd = None
 
     def __del__(self):
         self.logger.removeHandler(self._handler)
@@ -742,6 +745,6 @@ class Connection(object):
         self._os_type = di['os_type']
         self._os_version = di['os_version']
         self._udi = ddr['udi']
-        print("PROMPTS: {}".format(ddr['prompts']))
+        # print("PROMPTS: {}".format(ddr['prompts']))
         self._driver.platform_prompt = ddr['prompts'][-1]
         self._driver.compiled_prompts = ddr['prompts']
