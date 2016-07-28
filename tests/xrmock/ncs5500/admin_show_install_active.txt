@@ -1,0 +1,60 @@
+Wed Jul 27 13:07:56.221 CEST
+
+iox connected from 127.0.0.1 using console on xr-vm_node0_RP0_CPU0
+sysadmin-vm:0_RP0# terminal length 0
+Wed Jul  27 11:07:56.674 UTC
+sysadmin-vm:0_RP0# show install active
+Wed Jul  27 11:07:56.776 UTC
+ Node 0/RP0 [RP]
+    Active Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/RP1 [RP]
+    Active Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/0 [LC]
+    Active Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/1 [LC]
+    Active Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/2 [LC]
+    Active Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/SC0 [XC]
+    Active Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/SC1 [XC]
+    Active Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/FC0 [FABRIC]
+    Active Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/FC1 [FABRIC]
+    Active Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/FC2 [FABRIC]
+    Active Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/FC3 [FABRIC]
+    Active Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/FC4 [FABRIC]
+    Active Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/FC5 [FABRIC]
+    Active Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+sysadmin-vm:0_RP0#

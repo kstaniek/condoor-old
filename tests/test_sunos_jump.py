@@ -97,6 +97,9 @@ class TestSunConnection(TestCase):
         self.server_thread = Thread(target=self.server.serve_forever)
         self.server_thread.daemon = True
         self.server_thread.start()
+        self.log_session = False
+        self.logfile_condoor = None  # sys.stderr
+        self.log_level = 0
 
     def tearDown(self):
         self.server.shutdown()
@@ -105,14 +108,14 @@ class TestSunConnection(TestCase):
 
     def test_sun_connection(self):
         urls = ["telnet://admin:admin@127.0.0.1:10023", "telnet://admin:admin@host1"]
-        conn = condoor.Connection("host", urls, log_session=True)
+        conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)
 
         with self.assertRaises(condoor.ConnectionTimeoutError):
-            conn.connect(sys.stderr)
+            conn.connect(self.logfile_condoor)
 
     def test_sun_connection_wrong_passowrd(self):
         urls = ["telnet://admin:wrong@127.0.0.1:10023", "telnet://admin:admin@host1"]
-        conn = condoor.Connection("host", urls, log_session=True)
+        conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)
 
         with self.assertRaises(condoor.ConnectionAuthenticationError):
-            conn.connect(sys.stderr)
+            conn.connect(self.logfile_condoor)

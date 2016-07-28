@@ -56,28 +56,31 @@ class TestNCS1KConnection(TestCase):
         self.server_thread = Thread(target=self.server.serve_forever)
         self.server_thread.daemon = True
         self.server_thread.start()
+        self.log_session = False
+        self.logfile_condoor = None  # sys.stderr
+        self.log_level = 0
 
     def tearDown(self):
         self.server.shutdown()
         self.server.server_close()
         self.server_thread.join()
 
-    def test_NCS1K_disovery(self):
+    def test_NCS1K_1_discovery(self):
 
         urls = ["telnet://admin:admin@127.0.0.1:10023"]
-        conn = condoor.Connection("host", urls, log_session=True)
-        conn.discovery(sys.stderr)
+        conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=0)
+        conn.discovery(self.logfile_condoor)
         conn.disconnect()
 
-    def test_NCS1K_connection_refused(self):
+    def test_NCS1K_2_connection_refused(self):
         urls = ["telnet://admin:admin@127.0.0.1:10024"]
-        conn = condoor.Connection("host", urls, log_session=True)
+        conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=0)
         with self.assertRaises(condoor.ConnectionError):
-            conn.discovery(sys.stderr)
+            conn.discovery(self.logfile_condoor)
 
-    def test_NCS1K_connection_wrong_user(self):
+    def test_NCS1K_3_connection_wrong_user(self):
         urls = ["telnet://root:admin@127.0.0.1:10023"]
-        conn = condoor.Connection("host", urls, log_session=True)
+        conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=0)
         with self.assertRaises(condoor.ConnectionError):
-            conn.discovery(sys.stderr)
+            conn.discovery(self.logfile_condoor)
 
