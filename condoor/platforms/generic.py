@@ -257,7 +257,7 @@ class Connection(object):
 
         self._info("Ignoring. Not implemented for this platform")
 
-    def run_fsm(self, name, command, events, transitions, timeout):
+    def run_fsm(self, name, command, events, transitions, timeout, max_transitions=20):
         """This method instantiate and run the Finite State Machine for the current device connection. Here is the
         example of usage::
 
@@ -290,6 +290,7 @@ class Connection(object):
             events (list): List of expected strings or pexpect.TIMEOUT exception expected from the device.
             transitions (list): List of tuples in defining the state machine transitions.
             timeout (int): Default timeout between states in seconds.
+            max_transitions (int): Default maximum number of transitions allowed for FSM.
 
         The transition tuple format is as follows::
 
@@ -330,7 +331,7 @@ class Connection(object):
         """
 
         self._send_command(command)
-        fsm = FSM(name, self.ctrl, events, transitions, timeout=timeout)
+        fsm = FSM(name, self.ctrl, events, transitions, timeout=timeout, max_transitions=max_transitions)
         return fsm.run()
 
     @property
