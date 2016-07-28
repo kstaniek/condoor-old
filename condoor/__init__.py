@@ -722,13 +722,18 @@ class Connection(object):
 
     @property
     def device_description_record(self):
+        print("COAA: {}".format([prompt.pattern for prompt in self._driver.compiled_prompts]))
+        print("DE: {}".format([prompt for prompt in self._driver.detected_prompts]))
+
         return {
             'driver_name': self._get_driver_name(),
             'device_info': self.device_info,
             'udi': self.udi,
             'hostname': self.hostname,
             'console': self.is_console,
-            'prompts': [prompt.pattern for prompt in self._driver.compiled_prompts]
+            'compiled_prompts': [prompt.pattern for prompt in self._driver.compiled_prompts],
+            'device_prompt': self.prompt,
+            'detected_prompts': [prompt for prompt in self._driver.detected_prompts],
         }
 
     @device_description_record.setter
@@ -746,5 +751,11 @@ class Connection(object):
         self._os_version = di['os_version']
         self._udi = ddr['udi']
         # print("PROMPTS: {}".format(ddr['prompts']))
-        self._driver.platform_prompt = ddr['prompts'][-1]
-        self._driver.compiled_prompts = ddr['prompts']
+        print("DDR: {}".format(ddr))
+        self._prompt = ddr['device_prompt']
+
+        self._driver.compiled_prompts = ddr['compiled_prompts']
+        self._driver.detected_prompts = ddr['detected_prompts']
+
+        print("COMPILED PROMPTS !!!!: '{}'".format(ddr['compiled_prompts']))
+        self._driver.determine_hostname(self._prompt)

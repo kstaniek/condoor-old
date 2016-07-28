@@ -99,9 +99,13 @@ class Connection(object):
         self._os_type = 'unknown'
         self.mode = None
         self.compiled_prompts = []
+        self.detected_prompts = []
+
         for _ in xrange(len(self.hosts) + 1):
             self.compiled_prompts.append(None)
+            self.detected_prompts.append(None)
         self.compiled_prompts[0] = "FaKePrOmPt"
+        self.detected_prompts[0] = "FaKePrOmPt"
 
     def __repr__(self):
         name = ""
@@ -124,7 +128,7 @@ class Connection(object):
         if not self.connected:
             self.ctrl = self.ctrl_class(self, self.hostname, self.hosts, self.account_manager, logfile=logfile)
             self.ctrl.logger = self.logger
-            self.ctrl.detected_prompts = self.compiled_prompts
+            self.ctrl.detected_prompts = self.detected_prompts
             self._info("Connecting to {} using {} driver".format(self.__repr__(), self.platform))
             self.connected = self.ctrl.connect()
 
@@ -417,6 +421,7 @@ class Connection(object):
     @action
     def _expected_prompt(self, ctx):
         prompt = self.ctrl.after
+        print("EXPECTED: {}".format(prompt))
         self.ctrl.detected_target_prompt = prompt
         self._determine_config_mode(prompt)
         self.determine_hostname(prompt)

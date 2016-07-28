@@ -39,6 +39,9 @@ import sys
 class NCS5500Handler(XRHandler):
     platform = "NCS5500"
 
+    def finish(self):
+        print("FINISH")
+
 
 class TestNCS5500Connection(TestCase):
 
@@ -50,10 +53,12 @@ class TestNCS5500Connection(TestCase):
 
         self.log_session = False
         self.logfile_condoor = None  # sys.stderr
-        self.log_level = 10
+        self.log_level = 20
 
 
     def tearDown(self):
+        self.conn.disconnect()
+
         self.server.shutdown()
         self.server.server_close()
         self.server_thread.join()
@@ -61,19 +66,21 @@ class TestNCS5500Connection(TestCase):
     def test_NCS5500_1_discovery(self):
         urls = ["telnet://admin:admin@127.0.0.1:10023"]
         conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)
+        self.conn = conn
         conn.connect(self.logfile_condoor)
 
-        self.assertEqual(conn.hostname, "ios", "Hostname")
-        self.assertEqual(conn.family, "ios", "Family")
-        self.assertEqual(conn.platform, "ios", "Platform")
-        self.assertEqual(conn.os_type, "ios", "OS")
-        self.assertEqual(conn.version, "6.0.1", "Version")
-        self.assertEqual(conn.udi['name'], "6.0.1", "Name")
-        self.assertEqual(conn.udi['description'], "6.0.1", "Description")
-        self.assertEqual(conn.udi['pid'], "6.0.1", "PID")
-        self.assertEqual(conn.udi['vid'], "6.0.1", "VID")
-        self.assertEqual(conn.udi['sn'], "6.0.1", "S/N")
-        self.assertEqual(conn._prompt, "6.0.1", "Prompt")
+        self.assertEqual(conn.hostname, "ios", "Wrong Hostname: {}".format(conn.hostname))
+        self.assertEqual(conn.family, "NCS5500", "Wrong Family: {}".format(conn.family))
+        self.assertEqual(conn.platform, "NCS-5508", "Wrong Platform: {}".format(conn.platform))
+        self.assertEqual(conn.os_type, "eXR", "Wrong OS Type: {}".format(conn.os_type))
+        self.assertEqual(conn.os_version, "6.0.1", "Wrong Version: {}".format(conn.os_version))
+        self.assertEqual(conn.udi['name'], "Rack 0", "Wrong Name: {}".format(conn.udi['name']))
+        self.assertEqual(conn.udi['description'], "NCS5500 8 Slot Single Chassis",
+                         "Wrong Description: {}".format(conn.udi['description']))
+        self.assertEqual(conn.udi['pid'], "NCS-5508", "Wrong PID: {}".format(conn.udi['pid']))
+        self.assertEqual(conn.udi['vid'], "V01", "Wrong VID: {}".format(conn.udi['vid']))
+        self.assertEqual(conn.udi['sn'], "FGE194714QX", "Wrong S/N: {}".format(conn.udi['sn']))
+        self.assertEqual(conn.prompt, "6.0.1", "Wrong Prompt: {}".format(conn.prompt))
 
         # self.logger.info("Hostname: '{}'".format(self.hostname))
         # self.logger.info("Family: {}".format(self.family))
@@ -89,8 +96,6 @@ class TestNCS5500Connection(TestCase):
         # self.logger.info("Is connected to console: {}".format(self.is_console))
         # self._discovered = True
 
-
-        conn.disconnect()
 
     def test_NCS5500_2_connection_wrong_user(self):
         urls = ["telnet://root:admin@127.0.0.1:10023"]
