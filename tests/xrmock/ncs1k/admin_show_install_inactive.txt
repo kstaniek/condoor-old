@@ -1,8 +1,0 @@
-sysadmin-vm:0_RP0# terminal length 0
-Mon Jul  25 00:57:26.554 UTC
-sysadmin-vm:0_RP0# show install inactive
-Mon Jul  25 00:57:26.623 UTC
- Node 0/RP0 [RP]
-    Inactive Packages:
-       ncs1k-sysadmin-6.1.1.18I
-sysadmin-vm:0_RP0#

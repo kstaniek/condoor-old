@@ -1,3 +1,0 @@
-Mon Jul 25 00:55:57.988 UTC
-1 inactive package(s) found:
-    ncs1k-xr-6.1.1.18I

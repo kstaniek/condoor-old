@@ -1,5 +1,0 @@
-Mon Jul 25 00:57:47.666 UTC
-Node 0/RP0/CPU0 [RP]
-  Boot Partition: xr_lv10
-  Committed Packages: 1
-        ncs1k-xr-6.0.1 version=6.0.1 [Boot image]

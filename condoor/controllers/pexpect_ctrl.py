@@ -128,6 +128,7 @@ class Controller(object):
                         if protocol.connect():
                             if protocol.authenticate(self.detected_prompts[hop]):
                                 connected = True
+                                print("DETECT prompt: {}".format(detect_prompt))
                                 if detect_prompt:
                                     if not self.detected_prompts[hop]:
                                         if not protocol.detect_prompt():

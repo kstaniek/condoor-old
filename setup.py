@@ -37,6 +37,9 @@ try:
 except ImportError:
     from distutils.core import setup, Command
 
+from setuptools.command.test import test as TestCommand
+import sys
+
 import re
 
 DESCRIPTION = 'This is a python module providing access to Cisco devices over Telnet and SSH'
@@ -72,6 +75,30 @@ def version():
     assert match, 'cannot find version in {}'.format(pyfile)
     return match.group(1)
 
+
+class Tox(TestCommand):
+    user_options = [('tox-args=', 'a', "Arguments to pass to tox")]
+
+    def initialize_options(self):
+        TestCommand.initialize_options(self)
+        self.tox_args = None
+
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = []
+        self.test_suite = True
+
+    def run_tests(self):
+        #  import here, cause outside the eggs aren't loaded
+        import tox
+        import shlex
+        args = self.tox_args
+        if args:
+            args = shlex.split(self.tox_args)
+        errno = tox.cmdline(args=args)
+        sys.exit(errno)
+
+
 setup(
     name=NAME,
     version=version(),
@@ -82,7 +109,8 @@ setup(
     url='https://github.com/kstaniek/condoor',
     download_url='https://github.com/kstaniek/condoor/tarball/{}'.format(version()),
     keywords='cisco,automation',
-    tests_require=['tox', 'pytest'],
+    tests_require=['tox'],
+    cmdclass={'test': Tox},
     platforms=['any'],
     packages=packages,
     package_data={'': ['LICENSE', ], },
