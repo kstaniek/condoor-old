@@ -342,7 +342,7 @@ class Connection(object):
             _family = "ASR900"
         elif _family.startswith("Nexus9000") and self._os_type == "NX-OS":
             _family = "N9K"
-        elif _family.startswith("NCS1"):
+        elif _family.startswith("NCS1") or _family.startswith("NCS-1"):
             _family = "NCS1K"
 
         self._family = _family
