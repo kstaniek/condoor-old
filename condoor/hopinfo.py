@@ -146,8 +146,9 @@ class HopInfo(object):
         return True
 
     def __repr__(self):
-        return "{}://{}@{}:{}".format(
-            self.protocol,
-            self.username,
-            self.hostname,
-            self.port)
+        if self.username is None:
+            repr_str = "{}://{}:{}".format(self.protocol, self.hostname, self.port)
+        else:
+            repr_str = "{}://{}@{}:{}".format(self.protocol, self.username, self.hostname, self.port)
+
+        return repr_str
