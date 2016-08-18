@@ -108,6 +108,13 @@ class Protocol(object):
                     searchwindowsize=None,
                     echo=True  # KEEP YOUR DIRTY HANDS OFF FROM ECHO!
                 )
+                rows, cols = self.ctrl._session.getwinsize()
+                self._dbg(10, "Terminal window size: ({}, {})".format(rows, cols))
+                if cols < 160:
+                    self.ctrl._session.setwinsize(24, 160)
+                    rows, cols = self.ctrl._session.getwinsize()
+                    self._dbg(10, "Terminal window size changed to: ({}, {})".format(rows, cols))
+
             except pexpect.EOF:
                 raise ConnectionError("Connection error", self.hostname)
             except pexpect.TIMEOUT:
