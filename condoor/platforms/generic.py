@@ -366,9 +366,13 @@ class Connection(object):
                 self._send_command(cmd)
 
                 if wait_for_string:
-                    self._wait_for_string(wait_for_string, timeout)
+                    success = self._wait_for_string(wait_for_string, timeout)
                 else:
-                    self.wait_for_prompt(timeout)
+                    success = self.wait_for_prompt(timeout)
+
+                if not success:
+                    self._error("Unexpected session disconnect")
+                    raise ConnectionError("Unexpected session disconnect", host=self.hostname)
 
             except CommandSyntaxError as e:
                 self._error("{}: '{}'".format(e.message, cmd))
