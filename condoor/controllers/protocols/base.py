@@ -42,7 +42,8 @@ from ..fsm import action
 # used for unix jumphosts
 PASSWORD_PROMPT = re.compile("[P|p]assword:\s?$")
 USERNAME_PROMPT = re.compile("([U|u]sername:|login:)\s?$")
-SHELL_PROMPT = re.compile("\$\s?|>\s?|#\s?|%\s?")
+# [sj20lab-as2:~] Cisco Linux - Red Hat Enterprise Linux Server release 6.6 (Santiago)
+SHELL_PROMPT = re.compile("\$\s?|>\s?|#\s?|%\s?|\[.*:~\]")
 
 PERMISSION_DENIED = "Permission denied"
 AUTH_FAILED = "Authentication failed|not authorized|Login incorrect"
@@ -107,6 +108,13 @@ class Protocol(object):
                     searchwindowsize=None,
                     echo=True  # KEEP YOUR DIRTY HANDS OFF FROM ECHO!
                 )
+                rows, cols = self.ctrl._session.getwinsize()
+                self._dbg(10, "Terminal window size: ({}, {})".format(rows, cols))
+                if cols < 160:
+                    self.ctrl._session.setwinsize(24, 160)
+                    rows, cols = self.ctrl._session.getwinsize()
+                    self._dbg(10, "Terminal window size changed to: ({}, {})".format(rows, cols))
+
             except pexpect.EOF:
                 raise ConnectionError("Connection error", self.hostname)
             except pexpect.TIMEOUT:

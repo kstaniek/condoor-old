@@ -84,8 +84,6 @@ class FSM(object):
 
         """
 
-    max_transitions = 20
-
     class Context(object):
         _slots__ = ['fsm_name', 'ctrl', 'event_index', 'event', 'state', 'finished', 'msg']
         fsm_name = "FSM"
@@ -111,7 +109,8 @@ class FSM(object):
             return "FSM Context:E={},S={},FI={},M='{}'".format(
                 self.event, self.state, self.finished, self.msg)
 
-    def __init__(self, name, ctrl, events, transitions, init_pattern=None, timeout=300, searchwindowsize=-1):
+    def __init__(self, name, ctrl, events, transitions, init_pattern=None, timeout=300, searchwindowsize=-1,
+                 max_transitions=20):
         """This is a FSM class constructor.
 
         Args:
@@ -122,6 +121,7 @@ class FSM(object):
             init_pattern (str): The pattern that was expected in the previous operation.
             timeout (int): Timeout between states in seconds. Defaults to 300 seconds.
             searchwindowsize (int): The size of search window. Defaults to -1.
+            max_transitions (int): Max number of transitions allowed before quiting the FSM.
 
         The transition tuple format is as follows::
 
@@ -140,6 +140,7 @@ class FSM(object):
         self.searchwindowsize = searchwindowsize
         self.name = name
         self.init_pattern = init_pattern
+        self.max_transitions = max_transitions
         self.logger = ctrl.logger  # logging.getLogger('condoor.fsm')
 
         self.transition_table = self._compile(transitions, events)

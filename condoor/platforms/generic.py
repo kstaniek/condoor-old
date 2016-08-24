@@ -265,7 +265,7 @@ class Connection(object):
 
         self._info("Ignoring. Not implemented for this platform")
 
-    def run_fsm(self, name, command, events, transitions, timeout):
+    def run_fsm(self, name, command, events, transitions, timeout, max_transitions=20):
         """This method instantiate and run the Finite State Machine for the current device connection. Here is the
         example of usage::
 
@@ -298,6 +298,7 @@ class Connection(object):
             events (list): List of expected strings or pexpect.TIMEOUT exception expected from the device.
             transitions (list): List of tuples in defining the state machine transitions.
             timeout (int): Default timeout between states in seconds.
+            max_transitions (int): Default maximum number of transitions allowed for FSM.
 
         The transition tuple format is as follows::
 
@@ -338,7 +339,7 @@ class Connection(object):
         """
 
         self._send_command(command)
-        fsm = FSM(name, self.ctrl, events, transitions, timeout=timeout)
+        fsm = FSM(name, self.ctrl, events, transitions, timeout=timeout, max_transitions=max_transitions)
         return fsm.run()
 
     @property
@@ -372,9 +373,14 @@ class Connection(object):
                 self._send_command(cmd)
 
                 if wait_for_string:
-                    self._wait_for_string(wait_for_string, timeout)
+                    success = self._wait_for_string(wait_for_string, timeout)
                 else:
-                    self.wait_for_prompt(timeout)
+                    success = self.wait_for_prompt(timeout)
+
+                if not success:
+                    self._error("Unexpected session disconnect during '{}' "
+                                "command execution".format(cmd))
+                    raise ConnectionError("Unexpected session disconnect", host=self.hostname)
 
             except CommandSyntaxError as e:
                 self._error("{}: '{}'".format(e.message, cmd))
@@ -394,7 +400,7 @@ class Connection(object):
                 raise ConnectionError("Unexpected session disconnect", host=self.hostname)
 
             except Exception as err:
-                error_msg = str(err.message).splitlines()[0]
+                error_msg = str(err)
                 self._error("Exception: {}:{}".format(err.__class__, error_msg))
                 raise ConnectionError(message=error_msg, host=self.hostname)
 
@@ -421,7 +427,6 @@ class Connection(object):
     @action
     def _expected_prompt(self, ctx):
         prompt = self.ctrl.after
-        print("EXPECTED: {}".format(prompt))
         self.ctrl.detected_target_prompt = prompt
         self._determine_config_mode(prompt)
         self.determine_hostname(prompt)
@@ -438,7 +443,9 @@ class Connection(object):
 
     @action
     def _connection_closed(self, ctx):
+        ctx.msg = "Device disconnected"
         ctx.ctrl.connected = False
+        # do not stop FSM to detect the jumphost prompt
         return True
 
     @action
@@ -485,11 +492,9 @@ class Connection(object):
 
         transitions = [
             (self.command_syntax_re, [0], -1, CommandSyntaxError("Command unknown", self.hostname), 0),
-            # (self.connection_closed_re, [0], -1, self._connection_closed, 10),
-            (self.connection_closed_re, [0], 1, None, 10),
+            (self.connection_closed_re, [0], 1, self._connection_closed, 10),
             (pexpect.TIMEOUT, [0], -1, CommandTimeoutError("Timeout waiting for prompt", self.hostname), 0),
-            (pexpect.EOF, [0], -1, ConnectionError("Unexpected device disconnect", self.hostname), 0),
-            (pexpect.EOF, [1], -1, self._connection_closed, 0),
+            (pexpect.EOF, [0, 1], -1, ConnectionError("Unexpected device disconnect", self.hostname), 0),
             (self.more, [0], 0, self._send_space, 10),
             (self.compiled_prompts[-1], [0], -1, self._expected_prompt, 0),
             (self.press_return, [0], -1, self._stays_connected, 0)
@@ -512,13 +517,10 @@ class Connection(object):
 
         transitions = [
             (self.command_syntax_re, [0], -1, CommandSyntaxError("Command unknown", self.hostname), 0),
-            # (self.connection_closed_re, [0], -1, self._connection_closed, 10),
-            (self.connection_closed_re, [0], 1, None, 10),
+            (self.connection_closed_re, [0], 1, self._connection_closed, 10),
             (pexpect.TIMEOUT, [0], -1, CommandTimeoutError("Timeout waiting for string", self.hostname), 0),
-            (pexpect.EOF, [0], -1, ConnectionError("Unexpected device disconnect", self.hostname), 0),
-            (pexpect.EOF, [1], -1, self._connection_closed, 0),
+            (pexpect.EOF, [0, 1], -1, ConnectionError("Unexpected device disconnect", self.hostname), 0),
             (self.more, [0], 0, self._send_space, 10),
-            # (self.more, [2], 0, None, 10),
             (expected_string, [0], -1, self._expected_string_received, 0),
             (self.press_return, [0], -1, self._stays_connected, 0)
         ]

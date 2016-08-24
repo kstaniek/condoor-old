@@ -180,13 +180,11 @@ class Connection(generic.Connection):
 
         transitions = [
             (self.command_syntax_re, [0], -1, CommandSyntaxError("Command unknown", self.hostname), 0),
-            # (self.connection_closed_re, [0], -1, self._connection_closed, 10),
-            (self.connection_closed_re, [0], 1, None, 10),
+            (self.connection_closed_re, [0], 1, self._connection_closed, 10),
             (pexpect.TIMEOUT, [0], -1, CommandTimeoutError("Timeout waiting for prompt", self.hostname), 0),
-            (pexpect.EOF, [0], -1, ConnectionError("Unexpected device disconnect", self.hostname), 0),
-            (pexpect.EOF, [1], -1, self._connection_closed, 0),
+            (pexpect.EOF, [0, 1], -1, ConnectionError("Unexpected device disconnect", self.hostname), 0),
             (self.more, [0], 0, self._send_space, 10),
-            (self.compiled_prompts[-1], [0], -1, self._expected_prompt, 0),
+            (self.compiled_prompts[-1], [0, 1], -1, self._expected_prompt, 0),
             (self.press_return, [0], -1, self._stays_connected, 0),
             (_BUFFER_OVERFLOW, [0], -1, CommandSyntaxError("Command too long", self.hostname), 0)
         ]
