@@ -62,16 +62,6 @@ class Connection(generic.Connection):
 
     target_prompt_components = ['prompt_dynamic', 'prompt_default', 'rommon', 'calvados']
 
-    def prepare_prompt(self):
-        prompt_re = re.compile(
-            '((({})(\([^()]*\))?#|'
-            'sysadmin-vm:[0-3]_RS?P[0-1]:?.*)#|'
-            'rommon \d+ >|'
-            'RP/[0-3]/RS?P[0-1]/CPU[0-1]:ios#)'.format(re.escape(self.ctrl.detected_target_prompt[:-1]))
-        )
-        self.compiled_prompts[-1] = prompt_re
-        self.prompt = self.ctrl.detected_target_prompt
-
     def prepare_terminal_session(self):
         self.send('terminal exec prompt no-timestamp')
         self.send('terminal len 0')
