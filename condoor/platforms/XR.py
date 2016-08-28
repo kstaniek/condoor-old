@@ -60,15 +60,18 @@ class Connection(generic.Connection):
 
     rommon_boot_command = "boot"
 
-    def prepare_prompt(self):
-        prompt_re = re.compile(
-            '((({})(\([^()]*\))?#|'
-            'sysadmin-vm:[0-3]_RS?P[0-1]:?.*)#|'
-            'rommon \d+ >|'
-            'RP/[0-3]/RS?P[0-1]/CPU[0-1]:ios#)'.format(re.escape(self.ctrl.detected_target_prompt[:-1]))
-        )
-        self.compiled_prompts[-1] = prompt_re
-        self.prompt = self.ctrl.detected_target_prompt
+    target_prompt_components = ['prompt_dynamic', 'prompt_default', 'rommon']
+
+    # def prepare_prompt(self):
+    #     detected_target_prompt = self.detected_prompts[-1]
+    #     self._debug("Preparing prompt for detected target prompt: '{}'".format(detected_target_prompt))
+    #     prompt_re = re.compile(
+    #         '({})(\([^()]*\))?#|'
+    #         'sysadmin-vm:[0-3]_RS?P[0-1]:?.*#|'
+    #         'rommon \d+ >|'
+    #         'RP/[0-3]/RS?P[0-1]/CPU[0-1]:ios#'.format(re.escape(detected_target_prompt[:-1]))
+    #     )
+    #     self.compiled_prompts[-1] = prompt_re
 
     def prepare_terminal_session(self):
         self.send('terminal exec prompt no-timestamp')
@@ -86,6 +89,7 @@ class Connection(generic.Connection):
         sysadmin-vm:0_RSP0#
 
         """
+        # FIXME: No calvados on XR32
         try:
             if re.match(self.calvados_prompt, prompt):
                 self.hostname = 'NOT-SET'
@@ -103,6 +107,35 @@ class Connection(generic.Connection):
 
     def enable(self, enable_password=None):
         pass
+
+    # def connect(self, logfile=None):
+    #     """
+    #     Connection initialization method.
+    #     If logfile is None then the common logfile from
+    #     Args:
+    #         logfile (fd): File description for session log
+    #
+    #     Returns:
+    #         True if connection is established successfully
+    #         False on failure.
+    #     """
+    #
+    #     #self._compile_prompts()
+    #     #self.prepare_prompt()
+    #
+    #     if not self.connected:
+    #         self.ctrl = self.ctrl_class(self, self.hostname, self.hosts, self.account_manager, logfile=logfile)
+    #         self.ctrl.logger = self.logger
+    #         self._info("Connecting to {} using {} driver".format(self.__repr__(), self.platform))
+    #         self.connected = self.ctrl.connect()
+    #
+    #     if self.connected:
+    #         self._info("Connected to {}".format(self.__repr__()))
+    #         self.prepare_terminal_session()
+    #     else:
+    #         raise ConnectionError("Connection failed", self.hostname)
+    #
+    #     return self.connected
 
     def reload(self, rommon_boot_command="boot", reload_timeout=300, os="XR"):
         """

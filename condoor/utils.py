@@ -102,3 +102,16 @@ def is_reachable(host, port=23):
     else:
         return False
     return True
+
+
+def pattern_to_str(pattern):
+    """
+    This function convert pattern to string. If pattern is string it returns itself,
+    if pattern is SRE_Pattern then return pattern attribute
+    :param pattern: pattern object or string
+    :return: str: pattern sttring
+    """
+    if isinstance(pattern, str):
+        return pattern
+    else:
+        return pattern.pattern

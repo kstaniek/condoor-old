@@ -40,6 +40,7 @@ from ..exceptions import \
 from ..controllers.fsm import FSM, action
 
 from ..controllers.protocols.base import PRESS_RETURN
+from ..patterns import YPatternManager
 
 _PROMPT_IOSXR = re.compile('\w+/\w+/\w+/\w+:.+#')
 _PROMPT_SHELL = re.compile('\$\s*|>\s*')
@@ -63,10 +64,9 @@ os_types = ['XR', 'CALVADOS', 'ROMMON', 'IOS', 'NX-OS']
 
 class Connection(object):
     platform = 'generic'
-    shell_prompt = "\$\s?|>\s?|#\s?|\%\s?"
+    shell_prompt = re.compile("\$\s?|>\s?|#\s?|%\s?|\[.*:~\]")
     connection_closed_re = re.compile("Connection closed")
     rommon_prompt = re.compile("rommon.*>")
-    # platform_prompt = re.compile('[\r\n][\r\n]((\w+/\w+/\w+/\w+:.*?)(\([^()]*\))?#|.*?[#|>])')
     platform_prompt = re.compile('[\w\-]+[#>]')
 
     password_prompt = re.compile("[P|p]assword:\s?")
@@ -80,9 +80,12 @@ class Connection(object):
                                    '\% Ambiguous command:|'
                                    '\% Invalid input detected|'
                                    "\% Invalid command at .* marker")  # NX-OS
+
     press_return = re.compile("Press RETURN to get started\.")
     more = re.compile(" --More-- ")
-    standby_console = re.compile("Standby console disabled|\(standby\)")
+    standby_console = re.compile("Standby console disabled|\(standby\)|Node is not ready or active for login")
+
+    target_prompt_components = ['prompt_dynamic']
 
     def __init__(self, name, hosts, controller_class, logger, account_manager=None):
         self.hosts = hosts
@@ -100,6 +103,7 @@ class Connection(object):
         self.mode = None
         self.compiled_prompts = []
         self.detected_prompts = []
+        self.pattern_manager = YPatternManager()
 
         for _ in xrange(len(self.hosts) + 1):
             self.compiled_prompts.append(None)
@@ -128,13 +132,17 @@ class Connection(object):
         if not self.connected:
             self.ctrl = self.ctrl_class(self, self.hostname, self.hosts, self.account_manager, logfile=logfile)
             self.ctrl.logger = self.logger
-            self.ctrl.detected_prompts = self.detected_prompts
             self._info("Connecting to {} using {} driver".format(self.__repr__(), self.platform))
+            self._compile_prompts()
             self.connected = self.ctrl.connect()
+            #self.detected_prompts = self.ctrl.detected_prompts
+            #self._compile_prompts()
+
+        print(self.detected_prompts)
+        print(self.compiled_prompts)
 
         if self.connected:
             self._info("Connected to {}".format(self.__repr__()))
-            self._compile_prompts()
             self.prepare_prompt()
             self.prepare_terminal_session()
         else:
@@ -357,8 +365,26 @@ class Connection(object):
     def prepare_terminal_session(self):
         self.send('terminal len 0')
 
+    def prepare_prompt(self):
+        detected_target_prompt = self.detected_prompts[-1]
+        patterns = [self.pattern_manager.get_pattern(
+            self.platform, pattern_name, compiled=False) for pattern_name in self.target_prompt_components]
+
+        patterns_re = "|".join(patterns).format(prompt=detected_target_prompt[:-1])
+
+        try:
+            prompt_re = re.compile(patterns_re)
+        except re.error as e:
+            raise RuntimeError("Pattern compile error: {} ({}:{})".format(e.message, self.platform, patterns_re))
+
+        self.compiled_prompts[-1] = prompt_re
+        self.prompt = self.ctrl.detected_target_prompt
+        self._debug("Dynamic prompt: '{}'".format(prompt_re.pattern))
+
+
     def _compile_prompts(self):
-        self.compiled_prompts = [re.compile(re.escape(prompt)) for prompt in self.ctrl.detected_prompts]
+        self.compiled_prompts = [re.compile(re.escape(prompt)) if prompt else None for prompt in self.detected_prompts]
+        self._debug("Prompts compiled")
 
     def _send_command(self, cmd):
         self.ctrl.setecho(False)
@@ -531,8 +557,8 @@ class Connection(object):
         sm = FSM("WAIT-4-STR", self.ctrl, events, transitions, timeout=timeout)
         return sm.run()
 
-    def prepare_prompt(self):
-        self.prompt = self.ctrl.detected_target_prompt
+    #def prepare_prompt(self):
+    #    self.prompt = self.ctrl.detected_target_prompt
 
     def _debug(self, msg):
         self.logger.debug("[{}]: {}".format(self.hostname, msg))

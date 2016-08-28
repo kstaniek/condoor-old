@@ -68,7 +68,7 @@ UNABLE_TO_CONNECT = "nodename nor servname provided, or not known|" \
 
 class Protocol(object):
 
-    def __init__(self, controller, node_info, account_manager=None, logfile=None):
+    def __init__(self, controller, node_info, prompt, get_pattern, account_manager=None, logfile=None):
         self.protocol = node_info.protocol
         self.hostname = node_info.hostname
         self.port = node_info.port
@@ -78,14 +78,22 @@ class Protocol(object):
         self.logfile = logfile
         self.account_manager = account_manager
 
+        self.prompt = ''
+
         username = node_info.username
         if not username and self.account_manager:
             username = self.account_manager.get_username(self.hostname)
 
         self.username = username
-        self.prompt = ""
         self.last_pattern = None
         self.logger = controller.logger  # logging.getLogger("condoor.controller.protocol")
+
+        self.prompt_pattern = prompt if prompt else get_pattern('prompt')
+        self.username_pattern = get_pattern('username')
+        self.password_pattern = get_pattern('password')
+        self.more_pattern = get_pattern('more')
+        self.rommon_pattern = get_pattern('rommon')
+        self.standby_pattern = get_pattern('standby')
 
     def _spawn_session(self, command):
         self._dbg(10, "Executing command: '{}'".format(command))
@@ -106,6 +114,7 @@ class Protocol(object):
                     command,
                     maxread=50000,
                     searchwindowsize=None,
+                    env={"TERM": "VT100"},  # to avoid color control charactes
                     echo=True  # KEEP YOUR DIRTY HANDS OFF FROM ECHO!
                 )
                 rows, cols = self.ctrl._session.getwinsize()
@@ -172,14 +181,7 @@ class Protocol(object):
             except pexpect.EOF:
                 raise ConnectionError('Session disconnected')
 
-        #  print("expired:{},total:{}".format(expired, total_timeout))
-        #  print(":".join("{:02x}".format(ord(c)) for c in prompt))
-        #  print("RAW: {}".format(repr(prompt)))
-        #  print prompt.split('\r')
-        #  print prompt.strip()
-        #  prompt = prompt.split('\r')[-1].strip()
         prompt = prompt.strip()
-        #  print("PROMPT: '%s'" % prompt)
         return prompt
 
     def levenshtein_distance(self, a, b):
@@ -241,8 +243,8 @@ class Protocol(object):
 
             if float(ld) / len_a < 0.3:
                 self.prompt = b.splitlines(True)[-1]
-                self._dbg(10, "Detected prompt: '{}'".format(self.prompt))
                 compiled_prompt = re.compile("(\r\n|\n\r){}".format(re.escape(self.prompt)))
+                self._dbg(10, "Detected prompt: '{}'".format(self.prompt))
                 self._dbg(10, "Compiled prompt: '{}".format(repr(compiled_prompt.pattern)))
                 self.ctrl.sendline()
                 self.ctrl.expect(compiled_prompt)  # match from new line

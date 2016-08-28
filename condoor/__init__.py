@@ -434,8 +434,12 @@ class Connection(object):
         self._init_driver(driver_name)
         self._driver.ctrl = ctrl
         self._driver.connected = True
-
         self._driver.determine_hostname(self._prompt)
+
+        # New driver initialized so need to copy detected prompts from controller
+        self._driver.detected_prompts = self._driver.ctrl.detected_prompts
+        #self._driver._compile_prompts()
+        #self._driver.prepare_prompt()
 
         self._hostname = self._driver.hostname
 
@@ -452,6 +456,8 @@ class Connection(object):
         self.logger.info("Prompt: '{}'".format(self._prompt))
         self.logger.info("Is connected to console: {}".format(self.is_console))
         self._discovered = True
+        self._write_cache()
+        self.logger.info("Discovery phase done")
 
     def _get_key(self):
         m = hashlib.md5()
@@ -465,23 +471,25 @@ class Connection(object):
             self.logger.error("Unable to open a cache file for write")
             return
 
-        cache[self._get_key()] = self.device_description_record
-        self.logger.info("Device description record cached")
+        key = self._get_key()
+        cache[key] = self.device_description_record
+        self.logger.info("Device description record cached: {}".format(key))
         cache.close()
 
     def _read_cache(self):
         try:
             cache = shelve.open(_cache_file, 'r')
         except Exception:
-            self.logger.error("Unable to open cache file for read")
+            self.logger.warning("No cache file availalbe. Discovery requred")
             return
 
+        key = self._get_key()
         try:
-            self.device_description_record = cache[self._get_key()]
+            self.device_description_record = cache[key]
             self.logger.info("Use cached device description record")
             self._discovered = True
         except KeyError:
-            self.logger.debug("Device cache missed")
+            self.logger.debug("Device cache missed: {}".format(key))
         finally:
             cache.close()
 
@@ -530,9 +538,12 @@ class Connection(object):
         self._set_default_log_fd(logfile)
         if not self._discovered:
             self.discovery(logfile=logfile)
-            self.logger.info("Discovery phase done")
 
         self.logger.debug("Driver: {}".format(self._driver.platform))
+
+        #self._driver._compile_prompts()
+        #self._driver.prepare_prompt()
+
         no_hosts = len(self._nodes)
         result = False
         for i in xrange(no_hosts):
@@ -552,7 +563,6 @@ class Connection(object):
             # This will never be executed
             raise ConnectionError("Unable to connect to the device")
 
-        self._write_cache()
         return result
 
     def reconnect(self, max_timeout=360, logfile=None):
@@ -724,16 +734,12 @@ class Connection(object):
 
     @property
     def device_description_record(self):
-        print("COAA: {}".format([prompt.pattern for prompt in self._driver.compiled_prompts]))
-        print("DE: {}".format([prompt for prompt in self._driver.detected_prompts]))
-
         return {
             'driver_name': self._get_driver_name(),
             'device_info': self.device_info,
             'udi': self.udi,
             'hostname': self.hostname,
             'console': self.is_console,
-            'compiled_prompts': [prompt.pattern for prompt in self._driver.compiled_prompts],
             'device_prompt': self.prompt,
             'detected_prompts': [prompt for prompt in self._driver.detected_prompts],
         }
@@ -752,12 +758,6 @@ class Connection(object):
         self._os_type = di['os_type']
         self._os_version = di['os_version']
         self._udi = ddr['udi']
-        # print("PROMPTS: {}".format(ddr['prompts']))
-        print("DDR: {}".format(ddr))
         self._prompt = ddr['device_prompt']
-
-        self._driver.compiled_prompts = ddr['compiled_prompts']
         self._driver.detected_prompts = ddr['detected_prompts']
-
-        print("COMPILED PROMPTS !!!!: '{}'".format(ddr['compiled_prompts']))
         self._driver.determine_hostname(self._prompt)

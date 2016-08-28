@@ -33,6 +33,7 @@ from collections import defaultdict
 from base import Protocol
 from ssh import SSH
 from telnet import Telnet
+from functools import partial
 
 protocol2object = defaultdict(
     Protocol, {
@@ -42,10 +43,18 @@ protocol2object = defaultdict(
 )
 
 
-def make_protocol(controller, node_info, spawn, account_manager, logfile):
+def make_protocol(controller, node_info, prompt):
+    spawn = False if controller.connected else True
+    logfile = controller.session_log
+    account_manager = controller.account_mgr
+    platform = 'jumphost' if not controller.is_target else controller.platform.platform
+    pattern_manager = controller.platform.pattern_manager
+    get_pattern = partial(pattern_manager.get_pattern, platform)
     return protocol2object[node_info.protocol](
         controller,
         node_info,
         spawn,
+        prompt,
+        get_pattern,
         account_manager,
         logfile)

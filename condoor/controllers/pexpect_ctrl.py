@@ -38,6 +38,7 @@ from ..controllers.protocols import make_protocol
 from ..exceptions import ConnectionError, ConnectionTimeoutError
 
 import pexpect
+from functools import partial
 
 
 # Delegate following methods to _session class
@@ -92,9 +93,6 @@ class Controller(object):
         # it can restart from the last hop.
 
         connected = self.connected
-        if connected:
-            spawn = False
-
         if self.last_hop > 0 and start_hop == 0:
             start_hop = self.last_hop
 
@@ -124,15 +122,17 @@ class Controller(object):
                         else:
                             self._dbg(10, "[{}] {}: Connecting to jump host".format(hop, host.hostname))
 
-                        protocol = make_protocol(self, host, spawn, self.account_mgr, self.session_log)
+                        prompt = self.platform.compiled_prompts[hop]
+                        protocol = make_protocol(self, host, prompt)
+
                         if protocol.connect():
-                            if protocol.authenticate(self.detected_prompts[hop]):
+                            if protocol.authenticate():
                                 connected = True
-                                print("DETECT prompt: {}".format(detect_prompt))
-                                if detect_prompt:
-                                    if not self.detected_prompts[hop]:
-                                        if not protocol.detect_prompt():
-                                            connected = False
+                                if not prompt:
+                                    if protocol.detect_prompt():
+                                        detect_prompt = True
+                                    else:
+                                        connected = False
                         else:
                             connected = False
                     except ConnectionTimeoutError as e:
@@ -144,7 +144,9 @@ class Controller(object):
                         raise
 
                     if connected:
-                        self.detected_prompts[hop] = protocol.prompt
+                        if detect_prompt:
+                            self._dbg(10, "Detected prompt: {}".format(protocol.prompt))
+                            self.detected_prompts[hop] = protocol.prompt
                         break
 
                 attempt += 1
@@ -159,6 +161,9 @@ class Controller(object):
         if connected:
             self._dbg(10, "Connected target device")
             self.connected = True
+            if detect_prompt:
+                self.platform.detected_prompts = self.detected_prompts
+                self.platform._compile_prompts()
 
         return connected
 

@@ -1,0 +1,62 @@
+---
+generic:
+  prompt: '[\w\-]+[#>]'
+  prompt_dynamic: '{prompt}#'
+  username: '[U|u]sername:\s|login:\s?'
+  password: '[P|p]assword:\s?'
+  rommon: 'rommon \d+ >|rommon>|\(standby\)'
+  standby: 'Standby console disabled|\(standby\)|Node is not ready or active for login'
+  more: ' --More-- '
+  connection_closed:
+    pattern: 'Connection closed'
+    description: 'Unexpected connection close'
+
+
+jumphost:
+  prompt: '\$\s?|>\s?|#\s?|%\s?|\[.*:~\]'
+  username: '[U|u]sername:\s|login:\s?'
+  password: '[P|p]assword:\s?$'
+
+
+
+XR:
+  prompt: '(RP/\d+/RS?P[0-1]/CPU[0-3]:.*?)(\([^()]*\))?#'
+  prompt_dynamic: '({prompt})(\([^()]*\))?#'
+  prompt_default: 'RP/[0-3]/RS?P[0-1]/CPU[0-1]:ios#'
+  rommon: 'rommon \d+ >'
+  username: '[Uu]sername: '
+  password: '[Pp]assword: '
+  standby: 'This \(D\)RP Node is not ready or active for login /configuration'
+  syntax_error:
+    pattern: "% Invalid input detected at '^' marker.|% Incomplete command.|% Ambiguous command:"
+    description: "Command syntax error"
+
+
+XR64:
+  prompt: '(RP/\d+/RS?P[0-1]/CPU[0-3]:.*?)(\([^()]*\))?#'
+  prompt_dynamic: '({prompt})(\([^()]*\))?#'
+  prompt_default: 'RP/[0-3]/RS?P[0-1]/CPU[0-1]:ios#'
+  rommon: 'rommon \d+ >'
+  calvados: 'sysadmin-vm:[0-3]_RS?P[0-1]:?.*#'
+  username: '[Uu]sername: '
+  password: '[Pp]assword: '
+  standby: 'This \(D\)RP Node is not ready or active for login /configuration'
+  syntax_error:
+
+IOS:
+  prompt: '[\w\-]+[#|>]'
+  password: 'Password: '
+  username: 'Username: '
+  rommon: 'rommon \d+ >|rommon>'
+  syntax_error:
+
+
+NX-OS:
+  prompt: '[\w\-]+# '
+  password: 'Password: '
+  username: 'login: '
+  rommon: 'loader >'
+  standby: '\(standby\)'
+  syntax_error: '\% Invalid command at .* marker'
+
+

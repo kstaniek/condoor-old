@@ -27,10 +27,11 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-from base import Protocol, PRESS_RETURN, RESET_BY_PEER, UNABLE_TO_CONNECT, SHELL_PROMPT, PASSWORD_PROMPT
+from base import Protocol, PRESS_RETURN, RESET_BY_PEER, UNABLE_TO_CONNECT
 
 import pexpect
 from ..fsm import FSM, action
+from ...utils import pattern_to_str
 
 from ...exceptions import \
     ConnectionAuthenticationError, \
@@ -46,9 +47,8 @@ HOST_KEY_FAILED = "key verification failed"
 
 
 class SSH(Protocol):
-    def __init__(self, controller, device, spawn, account_manager, logfile):
-        super(SSH, self).__init__(controller, device, account_manager, logfile)
-
+    def __init__(self, controller, device, spawn, prompt, get_pattern, account_manager, logfile):
+        super(SSH, self).__init__(controller, device, prompt, get_pattern, account_manager, logfile)
         command = self._get_command()
         if spawn:
             self._spawn_session(command)
@@ -65,33 +65,22 @@ class SSH(Protocol):
         return command
 
     def connect(self):
-
-        if self.ctrl.is_target:
-            prompt = self.ctrl.platform.platform_prompt
-            rommon_prompt = self.ctrl.platform.rommon_prompt  # NOQA
-            more = self.ctrl.platform.more  # NOQA
-            password_prompt = self.ctrl.platform.password_prompt
-            username_prompt = self.ctrl.platform.username_prompt  # NOQA
-
-        else:
-            prompt = SHELL_PROMPT
-            rommon_prompt = SHELL_PROMPT  # NOQA
-            more = "!@#!@#"  # NOQA
-            password_prompt = PASSWORD_PROMPT
-
-        events = [password_prompt, prompt, UNABLE_TO_CONNECT, RESET_BY_PEER,
+        #                      0                    1                 2                 3                      4
+        events = [self.password_pattern, self.prompt_pattern, UNABLE_TO_CONNECT, RESET_BY_PEER,
+                  #   4           5             6                  7                  8
                   NEWSSHKEY, KNOWN_HOSTS, HOST_KEY_FAILED, MODULUS_TOO_SMALL, PROTOCOL_DIFFER,
+                  #      9
                   pexpect.TIMEOUT]
 
         transitions = [
-            (password_prompt, [0, 1, 4, 5], -1, self.save_pattern, 0),
-            (prompt, [0], -1, self.save_pattern, 0),
+            (self.password_pattern, [0, 1, 4, 5], -1, self.save_pattern, 0),
+            (self.prompt_pattern, [0], -1, self.save_pattern, 0),
             #  cover all messages indicating that connection was not set up
             (UNABLE_TO_CONNECT, [0], -1, self.unable_to_connect, 0),
             #  not sure when it happens - saw if there was session timeout on router
             (RESET_BY_PEER, [0], -1, self.unable_to_connect, 0),
             (NEWSSHKEY, [0], 1, self.send_yes, 10),
-            (KNOWN_HOSTS, [1], 0, None, 0),
+            (KNOWN_HOSTS, [0, 1], 0, None, 0),
             (HOST_KEY_FAILED, [0], -1, ConnectionError("Host key failed", self.hostname), 0),
             (MODULUS_TOO_SMALL, [0], 0, self.fallback_to_sshv1, 0),
             (PROTOCOL_DIFFER, [0], 4, self.fallback_to_sshv1, 0),
@@ -100,36 +89,24 @@ class SSH(Protocol):
             (pexpect.TIMEOUT, [5], -1, ConnectionTimeoutError("Connection timeout", self.hostname), 0)
 
         ]
+        self._dbg(10, "EXPECTED_PROMPT={}".format(pattern_to_str(self.prompt_pattern)))
         sm = FSM("SSH-CONNECT", self.ctrl, events, transitions, timeout=30, searchwindowsize=160)
         return sm.run()
 
-    def authenticate(self, prompt=None):
-        if self.ctrl.is_target:
-            prompt = self.ctrl.platform.prompt
-            rommon_prompt = self.ctrl.platform.rommon_prompt
-            password_prompt = self.ctrl.platform.password_prompt
-
-        else:
-            if prompt is None:
-                prompt = SHELL_PROMPT
-            rommon_prompt = SHELL_PROMPT  # NOQA
-            password_prompt = PASSWORD_PROMPT
-
-        events = [PRESS_RETURN, password_prompt, prompt, pexpect.TIMEOUT]
+    def authenticate(self):
+        #              0                     1                    2                3
+        events = [PRESS_RETURN, self.password_pattern, self.prompt_pattern, pexpect.TIMEOUT]
 
         transitions = [
             (PRESS_RETURN, [0, 1], 1, self.send_new_line, 10),
-            (password_prompt, [0], 1, self.send_pass, 20),
-            (password_prompt, [1], -1, ConnectionAuthenticationError("Authentication error", self.hostname), 0),
-            (prompt, [0, 1], -1, None, 0),
+            (self.password_pattern, [0], 1, self.send_pass, 20),
+            (self.password_pattern, [1], -1, ConnectionAuthenticationError("Authentication error", self.hostname), 0),
+            (self.prompt_pattern, [0, 1], -1, None, 0),
             (pexpect.TIMEOUT, [1], -1,
              ConnectionError("Error getting device prompt") if self.ctrl.is_target else self.send_new_line, 0)
         ]
 
-        if isinstance(prompt, str):
-            self._dbg(10, "EXPECTED_PROMPT={}".format(prompt))
-        elif prompt is not None:
-            self._dbg(10, "EXPECTED_PROMPT={}".format(prompt.pattern))
+        self._dbg(10, "EXPECTED_PROMPT={}".format(pattern_to_str(self.prompt_pattern)))
 
         sm = FSM("SSH-AUTH", self.ctrl, events, transitions, init_pattern=self.last_pattern, timeout=30)
         sm.run()
