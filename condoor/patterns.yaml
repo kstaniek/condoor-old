@@ -4,19 +4,33 @@ generic:
   prompt_dynamic: '{prompt}#'
   username: '[U|u]sername:\s|login:\s?'
   password: '[P|p]assword:\s?'
-  rommon: 'rommon \d+ >|rommon>|\(standby\)'
-  standby: 'Standby console disabled|\(standby\)|Node is not ready or active for login'
+  rommon:
+    - XR
+    - XR64
+    - IOS
+    - NX-OS
+  standby:
+    - XR
+    - XR64
+  syntax_error:
+    - XR
+    - XR64
+    - IOS
+    - NX-OS
+  press_return: 'Press RETURN to get started\.'
   more: ' --More-- '
   connection_closed:
     pattern: 'Connection closed'
-    description: 'Unexpected connection close'
+    description: 'Connection closed'
 
 
 jumphost:
   prompt: '\$\s?|>\s?|#\s?|%\s?|\[.*:~\]'
   username: '[U|u]sername:\s|login:\s?'
   password: '[P|p]assword:\s?$'
-
+  syntax_error:
+    pattern: 'command not found'
+    description: 'Command syntax error'
 
 
 XR:
@@ -28,7 +42,8 @@ XR:
   password: '[Pp]assword: '
   standby: 'This \(D\)RP Node is not ready or active for login /configuration'
   syntax_error:
-    pattern: "% Invalid input detected at '^' marker.|% Incomplete command.|% Ambiguous command:"
+    # double ' to escape
+    pattern: '% Invalid input detected at ''\^'' marker\.|% Incomplete command\.|% Ambiguous command:'
     description: "Command syntax error"
 
 
@@ -42,6 +57,8 @@ XR64:
   password: '[Pp]assword: '
   standby: 'This \(D\)RP Node is not ready or active for login /configuration'
   syntax_error:
+    pattern: '% Invalid input detected at ''\^'' marker\.|% Incomplete command\.|% Ambiguous command:'
+    description: "Command syntax error"
 
 IOS:
   prompt: '[\w\-]+[#|>]'
@@ -50,13 +67,10 @@ IOS:
   rommon: 'rommon \d+ >|rommon>'
   syntax_error:
 
-
 NX-OS:
   prompt: '[\w\-]+# '
   password: 'Password: '
   username: 'login: '
   rommon: 'loader >'
   standby: '\(standby\)'
-  syntax_error: '\% Invalid command at .* marker'
-
-
+  syntax_error: '% Invalid command at ''\^'' marker\.'

@@ -1,5 +1,4 @@
 # =============================================================================
-# asr9k
 #
 # Copyright (c)  2016, Cisco Systems
 # All rights reserved.
@@ -47,31 +46,10 @@ class Connection(generic.Connection):
     This is a platform specific implementation of based Driver class
     """
     platform = 'XR'
-    command_syntax_re = re.compile("\%(w+)?for a list of subcommands|"
-                                   "\% Ambiguous command:|"
-                                   "\% Invalid input detected")
-
-    platform_prompt = generic.prompt_patterns['XR']
-
-    password_prompt = re.compile("[Pp]assword: ")
-    username_prompt = re.compile("[Uu]sername: ")
-    rommon_prompt = re.compile("rommon \d+ >")
-    calvados_prompt = re.compile("sysadmin-vm:[0-3]_RS?P[0-1]#")
-
-    rommon_boot_command = "boot"
-
     target_prompt_components = ['prompt_dynamic', 'prompt_default', 'rommon']
 
-    # def prepare_prompt(self):
-    #     detected_target_prompt = self.detected_prompts[-1]
-    #     self._debug("Preparing prompt for detected target prompt: '{}'".format(detected_target_prompt))
-    #     prompt_re = re.compile(
-    #         '({})(\([^()]*\))?#|'
-    #         'sysadmin-vm:[0-3]_RS?P[0-1]:?.*#|'
-    #         'rommon \d+ >|'
-    #         'RP/[0-3]/RS?P[0-1]/CPU[0-1]:ios#'.format(re.escape(detected_target_prompt[:-1]))
-    #     )
-    #     self.compiled_prompts[-1] = prompt_re
+    def __init__(self, name, hosts, controller_class, logger, is_console=False, account_manager=None):
+        super(Connection, self).__init__(name, hosts, controller_class, logger, is_console=False, account_manager=None)
 
     def prepare_terminal_session(self):
         self.send('terminal exec prompt no-timestamp')
@@ -82,24 +60,13 @@ class Connection(generic.Connection):
         """
         RP/0/RP0/CPU0:Deploy#
         RP/0/RP0/CPU0:Deploy(config)#
-        sysadmin-vm:0_RP0:NCS-Deploy2#
-        sysadmin-vm:0_RP0:NCS-Deploy2(config)#
-        sysadmin-vm:0_RP0#
-        sysadmin-vm:0_RP0(config)#
-        sysadmin-vm:0_RSP0#
-
         """
-        # FIXME: No calvados on XR32
         try:
-            if re.match(self.calvados_prompt, prompt):
-                self.hostname = 'NOT-SET'
-            else:
-                self.hostname = prompt.split(":")[-1][:-1].split('(')[0]
+            self.hostname = prompt.split(":")[-1][:-1].split('(')[0]
             self._debug("Hostname detected: {}".format(self.hostname))
             if self.ctrl:
                 self.ctrl.hostname = self.hostname
         except:
-            raise
             self._warning("Unable to extract hostname from prompt: {}".format(prompt))
 
     def boot(self):
@@ -107,35 +74,6 @@ class Connection(generic.Connection):
 
     def enable(self, enable_password=None):
         pass
-
-    # def connect(self, logfile=None):
-    #     """
-    #     Connection initialization method.
-    #     If logfile is None then the common logfile from
-    #     Args:
-    #         logfile (fd): File description for session log
-    #
-    #     Returns:
-    #         True if connection is established successfully
-    #         False on failure.
-    #     """
-    #
-    #     #self._compile_prompts()
-    #     #self.prepare_prompt()
-    #
-    #     if not self.connected:
-    #         self.ctrl = self.ctrl_class(self, self.hostname, self.hosts, self.account_manager, logfile=logfile)
-    #         self.ctrl.logger = self.logger
-    #         self._info("Connecting to {} using {} driver".format(self.__repr__(), self.platform))
-    #         self.connected = self.ctrl.connect()
-    #
-    #     if self.connected:
-    #         self._info("Connected to {}".format(self.__repr__()))
-    #         self.prepare_terminal_session()
-    #     else:
-    #         raise ConnectionError("Connection failed", self.hostname)
-    #
-    #     return self.connected
 
     def reload(self, rommon_boot_command="boot", reload_timeout=300, os="XR"):
         """
@@ -168,23 +106,20 @@ class Connection(generic.Connection):
         transitions_shared = [
             # here must be authentication
             (CONSOLE, [3, 4], 5, None, 600),
-            (self.press_return, [5], 6, self._send_lf, 300),
+            (self.press_return_re, [5], 6, self._send_lf, 300),
             # if asks for username/password reconfiguration, go to success state and let plugin handle the rest.
             (RECONFIGURE_USERNAME_PROMPT, [6, 7], -1, None, 0),
             (CONFIGURATION_IN_PROCESS, [6], 7, None, 180),
             (CONFIGURATION_COMPLETED, [7], -1, self._return_and_authenticate, 0),
-
-            (pexpect.TIMEOUT, [0, 1, 2], -1,
-             ConnectionAuthenticationError("Unable to reload", self.hostname), 0),
-            (pexpect.EOF, [0, 1, 2, 3, 4, 5], -1,
-             ConnectionError("Device disconnected", self.hostname), 0),
+            (pexpect.TIMEOUT, [0, 1, 2], -1, ConnectionAuthenticationError("Unable to reload", self.hostname), 0),
+            (pexpect.EOF, [0, 1, 2, 3, 4, 5], -1, ConnectionError("Device disconnected", self.hostname), 0),
             (pexpect.TIMEOUT, [6], 7, self._send_line, 180),
             (pexpect.TIMEOUT, [7], -1,
              ConnectionAuthenticationError("Unable to reconnect after reloading", self.hostname), 0),
         ]
 
         self.ctrl.sendline(RELOAD)
-        events = [RELOAD_NA, RELOAD, DONE, PROCEED, CONFIGURATION_IN_PROCESS, self.rommon_prompt, self.press_return,
+        events = [RELOAD_NA, RELOAD, DONE, PROCEED, CONFIGURATION_IN_PROCESS, self.rommon_re, self.press_return,
                   CONSOLE, CONFIGURATION_COMPLETED, RECONFIGURE_USERNAME_PROMPT,
                   pexpect.TIMEOUT, pexpect.EOF]
         transitions = [
@@ -201,10 +136,12 @@ class Connection(generic.Connection):
 
     def wait_for_prompt(self, timeout=60):
         # ASR with IOSXR specific error when cmd is longer than 256 characters
-        _BUFFER_OVERFLOW = "input buffer overflow"
-        events = [self.command_syntax_re, self.connection_closed_re,
-                  pexpect.TIMEOUT, pexpect.EOF, self.compiled_prompts[-1], self.press_return, self.more,
-                  _BUFFER_OVERFLOW]
+        _BUFFER_OVERFLOW = re.compile("Error: input buffer overflow")
+
+        #                    0                         1                        2                        3
+        events = [self.syntax_error_re, self.connection_closed_re, self.compiled_prompts[-1],  self.press_return_re,
+                  #        4           5                 6                7
+                  self.more_re, _BUFFER_OVERFLOW, pexpect.TIMEOUT, pexpect.EOF]
 
         # add detected prompts chain
         events += self.compiled_prompts[:-1]  # without target prompt
@@ -212,13 +149,13 @@ class Connection(generic.Connection):
         self._debug("Waiting for prompt")
 
         transitions = [
-            (self.command_syntax_re, [0], -1, CommandSyntaxError("Command unknown", self.hostname), 0),
+            (self.syntax_error_re, [0], -1, CommandSyntaxError("Command unknown", self.hostname), 0),
             (self.connection_closed_re, [0], 1, self._connection_closed, 10),
             (pexpect.TIMEOUT, [0], -1, CommandTimeoutError("Timeout waiting for prompt", self.hostname), 0),
             (pexpect.EOF, [0, 1], -1, ConnectionError("Unexpected device disconnect", self.hostname), 0),
-            (self.more, [0], 0, self._send_space, 10),
+            (self.more_re, [0], 0, self._send_space, 10),
             (self.compiled_prompts[-1], [0, 1], -1, self._expected_prompt, 0),
-            (self.press_return, [0], -1, self._stays_connected, 0),
+            (self.press_return_re, [0], -1, self._stays_connected, 0),
             (_BUFFER_OVERFLOW, [0], -1, CommandSyntaxError("Command too long", self.hostname), 0)
         ]
 

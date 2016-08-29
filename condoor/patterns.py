@@ -36,7 +36,7 @@ import yaml
 class PatternManager(object):
     def __init__(self, pattern_dict):
         self._dict = pattern_dict
-        self._dict_compiled = self._compile_patterns()
+        #self._dict_compiled = self._compile_patterns()
 
     def _compile_patterns(self):
 
@@ -44,32 +44,54 @@ class PatternManager(object):
         for platform, patterns in self._dict.items():
             dict_compiled[platform] = {}
             for key, pattern in patterns.items():
-                if isinstance(pattern, str):
-                    try:
+                try:
+                    compiled = None
+                    if isinstance(pattern, str):
                         compiled = re.compile(pattern)
-                    except re.error as e:
-                        raise RuntimeError("Pattern compile error: {} ({}:{})".format(e.message, platform, key))
-                    dict_compiled[platform][key] = compiled
+                    elif isinstance(pattern, dict):
+                        compiled = re.compile(pattern['pattern'])
+                    if compiled:
+                        dict_compiled[platform][key] = compiled
+
+                except re.error as e:
+                    raise RuntimeError("Pattern compile error: {} ({}:{})".format(e.message, platform, key))
+
 
         return dict_compiled
 
-    def _get_platform_patterns(self, platform, compiled=True):
-        if compiled:
-            pattern_dict = self._dict_compiled
-        else:
-            pattern_dict = self._dict
+    def _get_platform_patterns(self, platform):
 
-        patterns = pattern_dict.get(platform, None)
+        patterns = self._dict.get(platform, None)
 
         if patterns is None:
             raise KeyError("Unknown platform".format(platform))
 
-        generic_patterns = pattern_dict.get('generic', None)
+        generic_patterns = self._dict.get('generic', None)
 
         if generic_patterns is None:
             raise RuntimeError("Patterns database corrupted. Platform: {}".format(platform))
 
         return patterns, generic_patterns
+
+    def _get_all_patterns(self, key, compiled=True):
+        # get of unique list of platforms
+        patterns = set()
+        platforms = list(set([platform for platform in self._dict.keys() if platform is not None]))
+        for platform in platforms:
+            try:
+                patterns |= set(self.get_pattern(platform, key, compiled=False).split('|'))
+            except KeyError:
+                continue
+
+        if not patterns:
+            raise KeyError("Pattern not found: {}".format(key))
+
+        patterns_re = "|".join(list(patterns))
+
+        if compiled:
+            return re.compile(patterns_re)
+        else:
+            return patterns_re
 
     def get_pattern(self, platform, key, compiled=True):
         """
@@ -79,16 +101,30 @@ class PatternManager(object):
         :param compiled:
         :return: Pattern string or RE object.
         """
-        patterns, generic_patterns = self._get_platform_patterns(platform, compiled=compiled)
+
+        patterns, generic_patterns = self._get_platform_patterns(platform)
         pattern = patterns.get(key, generic_patterns.get(key, None))
 
         if isinstance(pattern, dict):
             pattern = pattern.get('pattern', None)
 
-        if pattern is None:
-            raise RuntimeError("Patterns database corrupted. Platform: {}, Key: {}".format(platform, key))
+        # list of references to other platforms
+        if isinstance(pattern, list):
+            pattern_set = set()
+            for platform in pattern:
+                try:
+                    pattern_set |= set(self.get_pattern(platform, key, compiled=False).split('|'))
+                except KeyError:
+                    continue
+            pattern = "|".join(pattern_set)
 
-        return pattern
+        if pattern is None:
+            raise KeyError("Patterns database corrupted. Platform: {}, Key: {}".format(platform, key))
+
+        if compiled:
+            return re.compile(pattern)
+        else:
+            return pattern
 
     def get_pattern_description(self, platform, key, compiled=True):
         patterns, generic_patterns = self._get_platform_patterns(platform, compiled=compiled)
@@ -120,7 +156,16 @@ class YPatternManager(PatternManager):
 
 
 #ypm = YPatternManager()
-#print(ypm.get_pattern("XR", "connection_closed").pattern)
+#print(ypm.get_pattern("generic", "syntax_error", compiled=False))
+#print(ypm.get_pattern("generic", "syntax_error").pattern)
+
+
+#print(ypm._get_all_patterns('rommon').pattern)
+
+#print(ypm._get_all_patterns('rommon', compiled=False))
+
+#print(ypm._get_all_patterns('dupa'))
+
 #print(ypm.get_pattern("XR", "connection_closed", compiled=False))
 #print(ypm.get_pattern("XR", "standby_console", compiled=False))
 

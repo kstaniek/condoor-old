@@ -262,7 +262,8 @@ class Connection(object):
             self._nodes[self._last_driver_index],
             Controller,
             self.logger,
-            account_manager=self._account_manager
+            self.is_console,
+            account_manager=self._account_manager,
         )
         self._driver = driver
 
@@ -434,13 +435,13 @@ class Connection(object):
         self._init_driver(driver_name)
         self._driver.ctrl = ctrl
         self._driver.connected = True
+
+
+
         self._driver.determine_hostname(self._prompt)
 
         # New driver initialized so need to copy detected prompts from controller
         self._driver.detected_prompts = self._driver.ctrl.detected_prompts
-        #self._driver._compile_prompts()
-        #self._driver.prepare_prompt()
-
         self._hostname = self._driver.hostname
 
         self.logger.info("Hostname: '{}'".format(self.hostname))
@@ -540,9 +541,6 @@ class Connection(object):
             self.discovery(logfile=logfile)
 
         self.logger.debug("Driver: {}".format(self._driver.platform))
-
-        #self._driver._compile_prompts()
-        #self._driver.prepare_prompt()
 
         no_hosts = len(self._nodes)
         result = False
@@ -746,12 +744,12 @@ class Connection(object):
 
     @device_description_record.setter
     def device_description_record(self, ddr):
+        self._is_console = ddr['console']
         driver_name = ddr['driver_name']
         if driver_name != self._get_driver_name():
             self._init_driver(driver_name)
 
         self._hostname = ddr['hostname']
-        self._is_console = ddr['console']
         di = ddr['device_info']
         self._family = di['family']
         self._platform = di['platform']

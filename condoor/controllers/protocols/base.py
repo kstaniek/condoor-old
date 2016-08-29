@@ -86,7 +86,7 @@ class Protocol(object):
 
         self.username = username
         self.last_pattern = None
-        self.logger = controller.logger  # logging.getLogger("condoor.controller.protocol")
+        self.logger = controller.logger
 
         self.prompt_pattern = prompt if prompt else get_pattern('prompt')
         self.username_pattern = get_pattern('username')

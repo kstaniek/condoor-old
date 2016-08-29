@@ -33,12 +33,14 @@ from collections import defaultdict
 from base import Protocol
 from ssh import SSH
 from telnet import Telnet
+from telnet import TelnetConsole
 from functools import partial
 
 protocol2object = defaultdict(
     Protocol, {
         'ssh': SSH,
-        'telnet': Telnet
+        'telnet': Telnet,
+        'telnet_console': TelnetConsole,
     }
 )
 
@@ -50,7 +52,12 @@ def make_protocol(controller, node_info, prompt):
     platform = 'jumphost' if not controller.is_target else controller.platform.platform
     pattern_manager = controller.platform.pattern_manager
     get_pattern = partial(pattern_manager.get_pattern, platform)
-    return protocol2object[node_info.protocol](
+
+    protocol_name = node_info.protocol
+    if controller.platform.is_console:
+        protocol_name += '_console'
+
+    return protocol2object[protocol_name](
         controller,
         node_info,
         spawn,

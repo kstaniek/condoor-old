@@ -38,7 +38,6 @@ from ..controllers.protocols import make_protocol
 from ..exceptions import ConnectionError, ConnectionTimeoutError
 
 import pexpect
-from functools import partial
 
 
 # Delegate following methods to _session class
@@ -129,10 +128,10 @@ class Controller(object):
                             if protocol.authenticate():
                                 connected = True
                                 if not prompt:
-                                    if protocol.detect_prompt():
-                                        detect_prompt = True
-                                    else:
+                                    if not protocol.detect_prompt():
                                         connected = False
+                                else:
+                                    detect_prompt = False
                         else:
                             connected = False
                     except ConnectionTimeoutError as e:
@@ -163,7 +162,6 @@ class Controller(object):
             self.connected = True
             if detect_prompt:
                 self.platform.detected_prompts = self.detected_prompts
-                self.platform._compile_prompts()
 
         return connected
 

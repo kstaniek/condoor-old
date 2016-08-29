@@ -50,44 +50,36 @@ _INVALID_INPUT = "Invalid input detected"
 _INCOMPLETE_COMMAND = "Incomplete command."
 _CONNECTION_CLOSED = "Connection closed"
 
-prompt_patterns = {
-    'XR': re.compile('(RP/\d+/RS?P[0-1]/CPU[0-3]:.*?)(\([^()]*\))?#'),
-    'XR64': re.compile('(RP/\d+/RS?P[0-1]/CPU[0-3]:.*?)(\([^()]*\))?#'),
-    'CALVADOS': re.compile("sysadmin-vm:[0-3]_RS?P[0-1]#"),
-    'ROMMON': re.compile("rommon [A|B]?\d+ >"),
-    'IOS': re.compile('[\w\-]+[#|>]'),
-    'NX-OS': re.compile('[\w\-]+# '),
-}
 
 os_types = ['XR', 'CALVADOS', 'ROMMON', 'IOS', 'NX-OS']
 
 
 class Connection(object):
     platform = 'generic'
-    shell_prompt = re.compile("\$\s?|>\s?|#\s?|%\s?|\[.*:~\]")
-    connection_closed_re = re.compile("Connection closed")
-    rommon_prompt = re.compile("rommon.*>")
-    platform_prompt = re.compile('[\w\-]+[#>]')
+    #shell_prompt = re.compile("\$\s?|>\s?|#\s?|%\s?|\[.*:~\]")
+    #connection_closed_re = re.compile("Connection closed")
+    #rommon_prompt = re.compile("rommon.*>")
+    #platform_prompt = re.compile('[\w\-]+[#>]')
 
-    password_prompt = re.compile("[P|p]assword:\s?")
-    username_prompt = re.compile("([U|u]sername:\s|login:\s?)")
+    #password_prompt = re.compile("[P|p]assword:\s?")
+    #username_prompt = re.compile("([U|u]sername:\s|login:\s?)")
 
-    command_syntax_re = re.compile('\% Bad IP address or host name% Unknown command or computer name, '
-                                   'or unable to find computer address|'
-                                   '\% Ambiguous command:.*"|"'
-                                   '\% Type "show \?" for a list of subcommands'
-                                   '\%(w+)?for a list of subcommands|'
-                                   '\% Ambiguous command:|'
-                                   '\% Invalid input detected|'
-                                   "\% Invalid command at .* marker")  # NX-OS
+    # command_syntax_re = re.compile('\% Bad IP address or host name% Unknown command or computer name, '
+    #                                'or unable to find computer address|'
+    #                                '\% Ambiguous command:.*"|"'
+    #                                '\% Type "show \?" for a list of subcommands'
+    #                                '\%(w+)?for a list of subcommands|'
+    #                                '\% Ambiguous command:|'
+    #                                '\% Invalid input detected|'
+    #                                "\% Invalid command at .* marker")  # NX-OS
 
-    press_return = re.compile("Press RETURN to get started\.")
-    more = re.compile(" --More-- ")
-    standby_console = re.compile("Standby console disabled|\(standby\)|Node is not ready or active for login")
+    #press_return = re.compile("Press RETURN to get started\.")
+    #more = re.compile(" --More-- ")
+    #standby_console = re.compile("Standby console disabled|\(standby\)|Node is not ready or active for login")
 
     target_prompt_components = ['prompt_dynamic']
 
-    def __init__(self, name, hosts, controller_class, logger, account_manager=None):
+    def __init__(self, name, hosts, controller_class, logger, is_console=False, account_manager=None):
         self.hosts = hosts
         self.account_manager = account_manager
         self.pending_connection = False
@@ -98,18 +90,25 @@ class Connection(object):
         self.name = name
         self.hostname = name
         self.logger = logger
-        self.prompt = self.platform_prompt
         self._os_type = 'unknown'
         self.mode = None
         self.compiled_prompts = []
         self.detected_prompts = []
         self.pattern_manager = YPatternManager()
+        self.is_console = is_console
 
         for _ in xrange(len(self.hosts) + 1):
             self.compiled_prompts.append(None)
             self.detected_prompts.append(None)
         self.compiled_prompts[0] = "FaKePrOmPt"
         self.detected_prompts[0] = "FaKePrOmPt"
+
+        self.prompt = self.pattern_manager.get_pattern(self.platform, 'prompt')
+        self.syntax_error_re = self.pattern_manager.get_pattern(self.platform, 'syntax_error')
+        self.connection_closed_re = self.pattern_manager.get_pattern(self.platform, 'connection_closed')
+        self.press_return_re = self.pattern_manager.get_pattern(self.platform, 'press_return')
+        self.more_re = self.pattern_manager.get_pattern(self.platform, 'more')
+        self.rommon = self.pattern_manager.get_pattern(self.platform, 'rommon')
 
     def __repr__(self):
         name = ""
@@ -135,14 +134,10 @@ class Connection(object):
             self._info("Connecting to {} using {} driver".format(self.__repr__(), self.platform))
             self._compile_prompts()
             self.connected = self.ctrl.connect()
-            #self.detected_prompts = self.ctrl.detected_prompts
-            #self._compile_prompts()
-
-        print(self.detected_prompts)
-        print(self.compiled_prompts)
 
         if self.connected:
             self._info("Connected to {}".format(self.__repr__()))
+            self._compile_prompts()
             self.prepare_prompt()
             self.prepare_terminal_session()
         else:
@@ -381,7 +376,6 @@ class Connection(object):
         self.prompt = self.ctrl.detected_target_prompt
         self._debug("Dynamic prompt: '{}'".format(prompt_re.pattern))
 
-
     def _compile_prompts(self):
         self.compiled_prompts = [re.compile(re.escape(prompt)) if prompt else None for prompt in self.detected_prompts]
         self._debug("Prompts compiled")
@@ -444,7 +438,6 @@ class Connection(object):
         self._debug("Hostname detecting not implemented for generic driver")
 
     # Actions for FSM
-
     @action
     def _expected_string_received(self, ctx):
         ctx.finished = True
@@ -475,12 +468,6 @@ class Connection(object):
         return True
 
     @action
-    def print_before(self, ctx):
-        print(":".join("{:02x}".format(ord(c)) for c in ctx.ctrl.before))
-        print(ctx.ctrl.before)
-        print(self.compiled_prompts[-1].pattern.encode('string_escape'))
-
-    @action
     def _stays_connected(self, ctx):
         self.ctrl.connected = True
         self.ctrl.last_hop = len(self.ctrl.hosts) - 1  # Authentication needed
@@ -508,8 +495,10 @@ class Connection(object):
         return True
 
     def wait_for_prompt(self, timeout=60):
-        events = [self.command_syntax_re, self.connection_closed_re,
-                  pexpect.TIMEOUT, pexpect.EOF, self.compiled_prompts[-1], self.press_return, self.more]
+        #                    0                         1                        2                        3
+        events = [self.syntax_error_re, self.connection_closed_re, self.compiled_prompts[-1], self.press_return_re,
+                  #        4           5                 6                7
+                  self.more_re, pexpect.TIMEOUT, pexpect.EOF]
 
         # add detected prompts chain
         events += self.compiled_prompts[:-1]  # without target prompt
@@ -517,13 +506,13 @@ class Connection(object):
         self._debug("Waiting for prompt")
 
         transitions = [
-            (self.command_syntax_re, [0], -1, CommandSyntaxError("Command unknown", self.hostname), 0),
+            (self.syntax_error_re, [0], -1, CommandSyntaxError("Command unknown", self.hostname), 0),
             (self.connection_closed_re, [0], 1, self._connection_closed, 10),
             (pexpect.TIMEOUT, [0], -1, CommandTimeoutError("Timeout waiting for prompt", self.hostname), 0),
             (pexpect.EOF, [0, 1], -1, ConnectionError("Unexpected device disconnect", self.hostname), 0),
-            (self.more, [0], 0, self._send_space, 10),
-            (self.compiled_prompts[-1], [0], -1, self._expected_prompt, 0),
-            (self.press_return, [0], -1, self._stays_connected, 0)
+            (self.more_re, [0], 0, self._send_space, 10),
+            (self.compiled_prompts[-1], [0, 1], -1, self._expected_prompt, 0),
+            (self.press_return_re, [0], -1, self._stays_connected, 0),
         ]
 
         for prompt in self.compiled_prompts[:-1]:
@@ -533,8 +522,10 @@ class Connection(object):
         return sm.run()
 
     def _wait_for_string(self, expected_string, timeout=60):
-        events = [self.command_syntax_re, self.connection_closed_re,
-                  pexpect.TIMEOUT, pexpect.EOF, expected_string, self.press_return, self.more]
+        #                    0                         1                        2                  3
+        events = [self.syntax_error_re, self.connection_closed_re,  self.press_return_re, self.more_re,
+                  #      4                5             6
+                  pexpect.TIMEOUT, pexpect.EOF, expected_string]
 
         # add detected prompts chain
         events += self.compiled_prompts[:-1]  # without target prompt
@@ -542,13 +533,13 @@ class Connection(object):
         self._debug("Waiting for string: '{}'".format(repr(expected_string)))
 
         transitions = [
-            (self.command_syntax_re, [0], -1, CommandSyntaxError("Command unknown", self.hostname), 0),
+            (self.syntax_error_re, [0], -1, CommandSyntaxError("Command unknown", self.hostname), 0),
             (self.connection_closed_re, [0], 1, self._connection_closed, 10),
             (pexpect.TIMEOUT, [0], -1, CommandTimeoutError("Timeout waiting for string", self.hostname), 0),
             (pexpect.EOF, [0, 1], -1, ConnectionError("Unexpected device disconnect", self.hostname), 0),
-            (self.more, [0], 0, self._send_space, 10),
+            (self.more_re, [0], 0, self._send_space, 10),
             (expected_string, [0], -1, self._expected_string_received, 0),
-            (self.press_return, [0], -1, self._stays_connected, 0)
+            (self.press_return_re, [0], -1, self._stays_connected, 0)
         ]
 
         for prompt in self.compiled_prompts[:-1]:
