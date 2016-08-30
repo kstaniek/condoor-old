@@ -283,7 +283,7 @@ class Connection(object):
         if 'vty' in line:
             self.logger.debug("Detected connection to vty")
             return False
-        elif 'con' in line or 'tty' in line:  # tty for NX-OS
+        elif 'con' in line or 'tty' in line or 'aux' in line :  # tty for NX-OS # aux for ASR920
             self.logger.debug("Detected connection to console")
             return True
 
