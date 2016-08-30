@@ -399,8 +399,29 @@ class Connection(object):
                 The session is logged only if ``log_session=True`` was passed to the constructor.
                 It the parameter is not passed then the default *session.log* file is created in `log_dir`.
 
+
+        no_hosts = len(self._nodes)
+        result = False
+        for i in xrange(no_hosts):
+            try:
+                result = self._driver.connect(logfile=self._session_fd)
+                break
+            except ConnectionError as e:
+                # if this is last try raise the exception
+                if (i + 1) == no_hosts:
+                    raise e
+                else:
+                    self._shift_driver()
+            except AttributeError:
+                raise ConnectionError("Platform unknown. Try detect platform first")
+
+        else:
+            # This will never be executed
+            raise ConnectionError("Unable to connect to the device")
+
         """
 
+        self.logger.info("Discovery started")
         self._set_default_log_fd(logfile)
 
         if self._driver is None:
@@ -541,6 +562,8 @@ class Connection(object):
             self.discovery(logfile=logfile)
 
         self.logger.debug("Driver: {}".format(self._driver.platform))
+        self.logger.debug("Console: {}".format(self.is_console))
+        self.logger.debug("Console: {}".format(self._driver.is_console))
 
         no_hosts = len(self._nodes)
         result = False
@@ -740,22 +763,27 @@ class Connection(object):
             'console': self.is_console,
             'device_prompt': self.prompt,
             'detected_prompts': [prompt for prompt in self._driver.detected_prompts],
+            'last_driver': self._last_driver_index
         }
 
     @device_description_record.setter
     def device_description_record(self, ddr):
-        self._is_console = ddr['console']
-        driver_name = ddr['driver_name']
-        if driver_name != self._get_driver_name():
-            self._init_driver(driver_name)
 
+        self._is_console = ddr['console']
+        self._last_driver_index = ddr['last_driver']
         self._hostname = ddr['hostname']
+        self._udi = ddr['udi']
+        self._prompt = ddr['device_prompt']
+
         di = ddr['device_info']
         self._family = di['family']
         self._platform = di['platform']
         self._os_type = di['os_type']
         self._os_version = di['os_version']
-        self._udi = ddr['udi']
-        self._prompt = ddr['device_prompt']
+
+        driver_name = ddr['driver_name']
+        self._init_driver(driver_name)
+
         self._driver.detected_prompts = ddr['detected_prompts']
         self._driver.determine_hostname(self._prompt)
+

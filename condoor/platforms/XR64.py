@@ -50,7 +50,8 @@ class Connection(generic.Connection):
     target_prompt_components = ['prompt_dynamic', 'prompt_default', 'rommon', 'calvados']
 
     def __init__(self, name, hosts, controller_class, logger, is_console=False, account_manager=None):
-        super(Connection, self).__init__(name, hosts, controller_class, logger, is_console=False, account_manager=None)
+        super(Connection, self).__init__(
+            name, hosts, controller_class, logger, is_console=is_console, account_manager=account_manager)
 
         self.calvados_re = self.pattern_manager.get_pattern(self.platform, 'calvados')
 

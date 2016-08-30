@@ -48,9 +48,6 @@ class Connection(generic.Connection):
     platform = 'XR'
     target_prompt_components = ['prompt_dynamic', 'prompt_default', 'rommon']
 
-    def __init__(self, name, hosts, controller_class, logger, is_console=False, account_manager=None):
-        super(Connection, self).__init__(name, hosts, controller_class, logger, is_console=False, account_manager=None)
-
     def prepare_terminal_session(self):
         self.send('terminal exec prompt no-timestamp')
         self.send('terminal len 0')
