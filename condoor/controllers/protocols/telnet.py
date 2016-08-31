@@ -148,8 +148,8 @@ class TelnetConsole(Telnet):
             # router sends it again to delete
             (self.more_pattern, [7], 8, None, 10),
             # (prompt, [0, 1, 5], 6, self.send_new_line, 10),
-            (self.prompt_pattern, [0, 1, 5], 0, None, 10),
-            (self.prompt_pattern, [6, 8, 5], -1, self.save_pattern, 0),
+            (self.prompt_pattern, [0, 5], 0, None, 10),
+            (self.prompt_pattern, [1, 6, 8, 5], -1, self.save_pattern, 0),
             (self.rommon_pattern, [0, 1], -1, self.save_pattern, 0),
             (UNABLE_TO_CONNECT, [0], -1, self.unable_to_connect, 0),
             (RESET_BY_PEER, [0, 1], -1, self.unable_to_connect, 0),

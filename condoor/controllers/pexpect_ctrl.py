@@ -170,26 +170,31 @@ class Controller(object):
         Gracefully disconnect from all the nodes
         """
         self._dbg(10, "Initializing the disconnection process")
-        if self._session and self.isalive():
-            self._dbg(10, "Disconnecting the sessions")
-            index = 0
-            hop = 0
-            while index != 1 and hop < 10:
-                self.sendline('exit')
-                index = self.expect(
-                    [pexpect.TIMEOUT, pexpect.EOF, "con.*is now available|rommon|User Access Verification"],
-                    timeout=2
-                )
-                if index == 1:
-                    break
+        #if self._session and self.isalive():
+            #self._dbg(10, "Disconnecting the sessions")
+            #self.sendline('\x03')
+            #self.sendcontrol(']')
+            #self.sendline('quit')
 
-                if index == 2:  # console connected through TS
-                    self._dbg(10, "Console connection detected")
-                    self.sendline('\x03')
-                    self.sendcontrol(']')
-                    self.sendline('quit')
 
-                hop += 1
+            # index = 0
+            # hop = 0
+            # while index != 1 and hop < 10:
+            #     self.sendline('exit')
+            #     index = self.expect(
+            #         [pexpect.TIMEOUT, pexpect.EOF, "(con|tty|aux)[0-9][0-9]? is now available|rommon|User Access Verification"],
+            #         timeout=2
+            #     )
+            #     if index == 1:
+            #         break
+            #
+            #     if index == 2:  # console connected through TS
+            #         self._dbg(10, "Console connection detected")
+            #         self.sendline('\x03')
+            #         self.sendcontrol(']')
+            #         self.sendline('quit')
+            #
+            #     hop += 1
 
         self._session.close()
         self._dbg(10, "Disconnected")

@@ -180,6 +180,7 @@ class FSM(object):
                 if self.init_pattern is None:
                     ctx.event = self.ctrl.expect(self.events, searchwindowsize=self.searchwindowsize, timeout=timeout)
                 else:
+                    # FIXME: Fix using pattern_to_str
                     if isinstance(self.init_pattern, str):
                         self._dbg(10, "INIT_PATTERN={}".format(self.init_pattern.encode('string_escape')))
                     elif self.init_pattern is not None:

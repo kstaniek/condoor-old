@@ -293,7 +293,7 @@ class Connection(object):
         if 'vty' in line:
             self.logger.debug("Detected connection to vty")
             return False
-        elif 'con' in line or 'tty' in line:  # tty for NX-OS
+        elif 'con' in line or 'tty' in line or 'aux' in line:  # tty for NX-OS
             self.logger.debug("Detected connection to console")
             return True
 
@@ -421,7 +421,7 @@ class Connection(object):
 
         """
 
-        self.logger.info("Discovery started")
+        self.logger.info("Device discovery process started")
         self._set_default_log_fd(logfile)
 
         if self._driver is None:
@@ -502,7 +502,7 @@ class Connection(object):
         try:
             cache = shelve.open(_cache_file, 'r')
         except Exception:
-            self.logger.warning("No cache file availalbe. Discovery requred")
+            self.logger.warning("No cache file availalbe. Discovery required")
             return
 
         key = self._get_key()
@@ -562,8 +562,6 @@ class Connection(object):
             self.discovery(logfile=logfile)
 
         self.logger.debug("Driver: {}".format(self._driver.platform))
-        self.logger.debug("Console: {}".format(self.is_console))
-        self.logger.debug("Console: {}".format(self._driver.is_console))
 
         no_hosts = len(self._nodes)
         result = False
@@ -578,6 +576,7 @@ class Connection(object):
                 else:
                     self._shift_driver()
             except AttributeError:
+                raise
                 raise ConnectionError("Platform unknown. Try detect platform first")
 
         else:

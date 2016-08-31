@@ -103,12 +103,12 @@ class Connection(object):
         self.compiled_prompts[0] = "FaKePrOmPt"
         self.detected_prompts[0] = "FaKePrOmPt"
 
-        self.prompt = self.pattern_manager.get_pattern(self.platform, 'prompt')
+        self.prompt_re = self.pattern_manager.get_pattern(self.platform, 'prompt')
         self.syntax_error_re = self.pattern_manager.get_pattern(self.platform, 'syntax_error')
         self.connection_closed_re = self.pattern_manager.get_pattern(self.platform, 'connection_closed')
         self.press_return_re = self.pattern_manager.get_pattern(self.platform, 'press_return')
         self.more_re = self.pattern_manager.get_pattern(self.platform, 'more')
-        self.rommon = self.pattern_manager.get_pattern(self.platform, 'rommon')
+        self.rommon_re = self.pattern_manager.get_pattern(self.platform, 'rommon')
 
     def __repr__(self):
         name = ""
@@ -139,6 +139,7 @@ class Connection(object):
             self._info("Connected to {}".format(self.__repr__()))
             self._compile_prompts()
             self.prepare_prompt()
+            self.enable()
             self.prepare_terminal_session()
         else:
             raise ConnectionError("Connection failed", self.hostname)
@@ -260,7 +261,9 @@ class Connection(object):
             enable_password (str): The privileged mode password. This is optional parameter. If password is not
                 provided but required the password from url will be used. Refer to :class:`condoor.Connection`
         """
-        self._info("Ignoring. Not supported on this platform")
+        pass
+        #self._info("Ignoring. Not supported on this platform")
+
 
     def reload(self, rommon_boot_command="boot"):
         """This method reloads the device and waits for device to boot up. It post the informational message to the
@@ -350,6 +353,7 @@ class Connection(object):
         return self._get_os_type()
 
     def _get_os_type(self):
+        exit()
         for os_type in os_types:
             prompt_pattern = prompt_patterns[os_type]
             if re.match(prompt_pattern, self.ctrl.detected_target_prompt):
@@ -365,7 +369,7 @@ class Connection(object):
         patterns = [self.pattern_manager.get_pattern(
             self.platform, pattern_name, compiled=False) for pattern_name in self.target_prompt_components]
 
-        patterns_re = "|".join(patterns).format(prompt=detected_target_prompt[:-1])
+        patterns_re = "|".join(patterns).format(prompt=re.escape(detected_target_prompt[:-1]))
 
         try:
             prompt_re = re.compile(patterns_re)
@@ -420,6 +424,7 @@ class Connection(object):
                 raise ConnectionError("Unexpected session disconnect", host=self.hostname)
 
             except Exception as err:
+                raise
                 error_msg = str(err)
                 self._error("Exception: {}:{}".format(err.__class__, error_msg))
                 raise ConnectionError(message=error_msg, host=self.hostname)
@@ -436,6 +441,16 @@ class Connection(object):
 
     def determine_hostname(self, prompt):
         self._debug("Hostname detecting not implemented for generic driver")
+
+    def determine_hostname(self, prompt):
+        # self.prompt is a re pattern
+        result = re.search(self.prompt_re, prompt)
+        if result:
+            self.hostname = result.group('hostname')
+            self._debug("Hostname detected: {}".format(self.hostname))
+        else:
+            self._debug("Hostname not known: {}".format(prompt))
+
 
     # Actions for FSM
     @action

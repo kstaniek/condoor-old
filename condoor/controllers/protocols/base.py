@@ -118,11 +118,13 @@ class Protocol(object):
                     echo=True  # KEEP YOUR DIRTY HANDS OFF FROM ECHO!
                 )
                 rows, cols = self.ctrl._session.getwinsize()
-                self._dbg(10, "Terminal window size: ({}, {})".format(rows, cols))
                 if cols < 160:
                     self.ctrl._session.setwinsize(24, 160)
-                    rows, cols = self.ctrl._session.getwinsize()
-                    self._dbg(10, "Terminal window size changed to: ({}, {})".format(rows, cols))
+                    nrows, ncols = self.ctrl._session.getwinsize()
+                    self._dbg(10, "Terminal window size changed from "
+                                  "{}x{} to {}x{}".format(rows, cols, nrows, ncols))
+                else:
+                    self._dbg(10, "Terminal window size: {}x{}".format(rows, cols))
 
             except pexpect.EOF:
                 raise ConnectionError("Connection error", self.hostname)
@@ -245,7 +247,6 @@ class Protocol(object):
                 self.prompt = b.splitlines(True)[-1]
                 compiled_prompt = re.compile("(\r\n|\n\r){}".format(re.escape(self.prompt)))
                 self._dbg(10, "Detected prompt: '{}'".format(self.prompt))
-                self._dbg(10, "Compiled prompt: '{}".format(repr(compiled_prompt.pattern)))
                 self.ctrl.sendline()
                 self.ctrl.expect(compiled_prompt)  # match from new line
                 return True

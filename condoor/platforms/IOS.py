@@ -45,17 +45,20 @@ class Connection(generic.Connection):
     This is a platform specific implementation of based Driver class
     """
     platform = 'IOS'
-    command_syntax_re = re.compile('\% Bad IP address or host name% Unknown command or computer name, '
-                                   'or unable to find computer address|'
-                                   '\% Ambiguous command:.*"|'
-                                   '\% Type "show \?" for a list of subcommands|'
-                                   "% Invalid input detected at '\^' marker\.")
 
-    platform_prompt = generic.prompt_patterns['IOS']
+    #platform_prompt = generic.prompt_patterns['IOS']
 
-    password_prompt = re.compile("Password: ")
-    username_prompt = re.compile("Username: ")
-    rommon_prompt = re.compile("(rommon \d+ >)|(rommon>)")
+    #password_prompt = re.compile("Password: ")
+    #username_prompt = re.compile("Username: ")
+    #rommon_prompt = re.compile("(rommon \d+ >)|(rommon>)")
+
+    target_prompt_components = ['prompt_dynamic', 'prompt_default', 'rommon']
+
+    def __init__(self, name, hosts, controller_class, logger, is_console=False, account_manager=None):
+        super(Connection, self).__init__(
+            name, hosts, controller_class, logger, is_console=is_console, account_manager=account_manager)
+
+        self.password_re = self.pattern_manager.get_pattern(self.platform, 'password')
 
     def _get_enable_password(self):
         hop_info = self.hosts[-1]
@@ -64,28 +67,28 @@ class Connection(generic.Connection):
             enable_password = hop_info.password
         return enable_password
 
-    def prepare_prompt(self):
-        mode = self.ctrl.detected_target_prompt[-1]
-
-        # previously: '({})(\([^()]*\))?[#|>]'
-        # It is assumed that session stays in privilege mode
-        prompt_re = re.compile('({})(\([^()]*\))?#'.format(
-            re.escape(self.ctrl.detected_target_prompt[:-1])))
-        self.compiled_prompts[-1] = prompt_re
-        self.prompt = self.ctrl.detected_target_prompt
-
-        if mode == '>':
-            self.enable()
-
-    def determine_hostname(self, prompt):
-        result = re.search(r"^(.*)[#|>]", prompt)
-        if result:
-            self.hostname = result.group(1)
-            self._debug("Hostname detected: {}".format(self.hostname))
+    # def prepare_prompt(self):
+    #     mode = self.ctrl.detected_target_prompt[-1]
+    #
+    #     # previously: '({})(\([^()]*\))?[#|>]'
+    #     # It is assumed that session stays in privilege mode
+    #     prompt_re = re.compile('({})(\([^()]*\))?#'.format(
+    #         re.escape(self.ctrl.detected_target_prompt[:-1])))
+    #     self.compiled_prompts[-1] = prompt_re
+    #     self.prompt = self.ctrl.detected_target_prompt
+    #
+    #     if mode == '>':
+    #         self.enable()
 
     def prepare_terminal_session(self):
         self.send('terminal len 0')
         self.send('terminal width 0')
+
+    def _compile_prompts(self):
+        super(Connection, self)._compile_prompts()
+        if self.detected_prompts[-1]:
+            self.compiled_prompts[-1] = re.compile(re.escape(self.detected_prompts[-1][:-1]) + "[#>]")
+        self._debug("IOS prompt fixed")
 
     def reload(self, save_config=True):
         """
@@ -99,19 +102,17 @@ class Connection(generic.Connection):
         pass
 
     def enable(self, enable_password=None):
-        ENABLE = "enable"
-        self.ctrl.send("enable")
+        self._send_command("enable")
         prompt = self.compiled_prompts[-1]
 
-        events = [ENABLE, self.password_prompt, prompt, pexpect.TIMEOUT, pexpect.EOF]
+        events = [self.password_re, prompt, pexpect.TIMEOUT, pexpect.EOF]
         transitions = [
-            (ENABLE, [0], 1, self._send_lf, 10),
-            (self.password_prompt, [1], 2, self._send_enable_password, 10),
-            (self.password_prompt, [2], -1,
+            (self.password_re, [0], 1, self._send_enable_password, 10),
+            (self.password_re, [1], -1,
              ConnectionAuthenticationError("Incorrect enable password", self.hostname), 0),
-            (prompt, [1, 2, 3], -1, None, 0),
+            (prompt, [0, 1, 2, 3], -1, None, 0),
             (pexpect.TIMEOUT, [0, 1, 2], -1,
-             ConnectionAuthenticationError("Unable to get enable mode", self.hostname), 0),
+             ConnectionAuthenticationError("Unable to get privilidge mode", self.hostname), 0),
             (pexpect.EOF, [0, 1, 2], -1, ConnectionError("Device disconnected", self.hostname), 0)
         ]
 
