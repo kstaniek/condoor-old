@@ -82,8 +82,4 @@ NX-OS:
   username: '(.*?) login: '
   rommon: 'loader >'
   standby: '\(standby\)'
-  syntax_error: '% Invalid command at ''\^'' marker\.'
-
-
-#command_syntax_re = re.compile("% Invalid command at '\^' marker\.|"
-#                                   "% Incomplete command at '\^' marker\.")
+  syntax_error: '% Invalid command at ''\^'' marker\.|% Incomplete command at ''\^'' marker\.'
