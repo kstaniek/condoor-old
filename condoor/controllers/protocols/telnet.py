@@ -53,7 +53,6 @@ class Telnet(Protocol):
             self._spawn_session(command)
 
     def connect(self):
-
         #              0            1                    2                      3                      4
         events = [ESCAPE_CHAR, PRESS_RETURN, self.standby_pattern, self.username_pattern, self.password_pattern,
                   #        5                    6                    7

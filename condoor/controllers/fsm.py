@@ -32,9 +32,11 @@ from functools import wraps
 from pexpect import EOF
 from time import time
 
+
 from ..exceptions import \
     ConnectionError
 
+from ..utils import pattern_to_str
 
 def action(func):
     @wraps(func)
@@ -141,7 +143,7 @@ class FSM(object):
         self.name = name
         self.init_pattern = init_pattern
         self.max_transitions = max_transitions
-        self.logger = ctrl.logger  # logging.getLogger('condoor.fsm')
+        self.logger = ctrl.logger
 
         self.transition_table = self._compile(transitions, events)
 
@@ -180,11 +182,7 @@ class FSM(object):
                 if self.init_pattern is None:
                     ctx.event = self.ctrl.expect(self.events, searchwindowsize=self.searchwindowsize, timeout=timeout)
                 else:
-                    # FIXME: Fix using pattern_to_str
-                    if isinstance(self.init_pattern, str):
-                        self._dbg(10, "INIT_PATTERN={}".format(self.init_pattern.encode('string_escape')))
-                    elif self.init_pattern is not None:
-                        self._dbg(10, "INIT_PATTERN={}".format(self.init_pattern.pattern.encode('string_escape')))
+                    self._dbg(10, "INIT_PATTERN={}".format(pattern_to_str(self.init_pattern)))
                     ctx.event = self.events.index(self.init_pattern)
                     self.init_pattern = None
                 finish_time = time() - start_time
@@ -194,8 +192,7 @@ class FSM(object):
                 if key in self.transition_table:
                     transition = self.transition_table[key]
                     next_state, action, next_timeout = transition
-                    self._dbg(10, "E={},S={},T={},RT={:.2f}".format(
-                        ctx.event, ctx.state, timeout, finish_time))
+                    self._dbg(10, "E={},S={},T={},RT={:.2f}".format(ctx.event, ctx.state, timeout, finish_time))
                     if callable(action):
                         if not action(ctx):
                             self._dbg(50, "Error: {}".format(ctx.msg))

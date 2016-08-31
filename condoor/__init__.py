@@ -277,6 +277,7 @@ class Connection(object):
         self._init_driver()
 
     def _detect_console(self):
+        # FIXME: Use patterns
         try:
             output = self._driver.send("show users")
         except CommandError:
@@ -457,9 +458,8 @@ class Connection(object):
         self._driver.ctrl = ctrl
         self._driver.connected = True
 
-
-
         self._driver.determine_hostname(self._prompt)
+        self._hostname = self._driver.hostname
 
         # New driver initialized so need to copy detected prompts from controller
         self._driver.detected_prompts = self._driver.ctrl.detected_prompts
@@ -502,7 +502,7 @@ class Connection(object):
         try:
             cache = shelve.open(_cache_file, 'r')
         except Exception:
-            self.logger.warning("No cache file availalbe. Discovery required")
+            self.logger.warning("No cache file available. Discovery required")
             return
 
         key = self._get_key()

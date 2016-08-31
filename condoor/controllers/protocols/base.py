@@ -257,22 +257,12 @@ class Protocol(object):
         password = self.password
         if not password:
             if self.account_manager:
-                self._dbg(
-                    20,
-                    "{}: {}: Acquiring password for {} "
-                    "from system KeyRing".format(
+                self._dbg(20, "{}: {}: Acquiring password for {} from system KeyRing".format(
                         self.protocol, self.hostname, self.username)
                 )
-                password = self.account_manager.get_password(
-                    self.hostname,
-                    self.username,
-                    interact=True
-                )
+                password = self.account_manager.get_password(self.hostname, self.username, interact=True)
                 if not password:
-                    self._dbg(
-                        30,
-                        "{}: {}: Password for {} does not exists "
-                        "in KeyRing".format(
+                    self._dbg(30, "{}: {}: Password for {} does not exists in KeyRing".format(
                             self.protocol, self.hostname, self.username)
                     )
         return password

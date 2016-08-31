@@ -96,6 +96,7 @@ class Connection(object):
         self.detected_prompts = []
         self.pattern_manager = YPatternManager()
         self.is_console = is_console
+        self.prompt = self.pattern_manager.get_pattern('generic', 'prompt')
 
         for _ in xrange(len(self.hosts) + 1):
             self.compiled_prompts.append(None)
@@ -129,7 +130,7 @@ class Connection(object):
         """
 
         if not self.connected:
-            self.ctrl = self.ctrl_class(self, self.hostname, self.hosts, self.account_manager, logfile=logfile)
+            self.ctrl = self.ctrl_class(self, self.hosts, self.account_manager, logfile=logfile)
             self.ctrl.logger = self.logger
             self._info("Connecting to {} using {} driver".format(self.__repr__(), self.platform))
             self._compile_prompts()
@@ -262,14 +263,13 @@ class Connection(object):
                 provided but required the password from url will be used. Refer to :class:`condoor.Connection`
         """
         pass
-        #self._info("Ignoring. Not supported on this platform")
-
+        self._info("Priviledge mode not supported on {} platform".format(self.platform))
 
     def reload(self, rommon_boot_command="boot"):
         """This method reloads the device and waits for device to boot up. It post the informational message to the
         log if not implemented by device driver."""
 
-        self._info("Ignoring. Not implemented for this platform")
+        self._info("Reload not implemented on {} platform".format(self.platform))
 
     def run_fsm(self, name, command, events, transitions, timeout, max_transitions=20):
         """This method instantiate and run the Finite State Machine for the current device connection. Here is the
@@ -347,19 +347,6 @@ class Connection(object):
         self._send_command(command)
         fsm = FSM(name, self.ctrl, events, transitions, timeout=timeout, max_transitions=max_transitions)
         return fsm.run()
-
-    @property
-    def os_type(self):
-        return self._get_os_type()
-
-    def _get_os_type(self):
-        exit()
-        for os_type in os_types:
-            prompt_pattern = prompt_patterns[os_type]
-            if re.match(prompt_pattern, self.ctrl.detected_target_prompt):
-                return os_type
-        else:
-            return "unknown"
 
     def prepare_terminal_session(self):
         self.send('terminal len 0')
@@ -450,6 +437,7 @@ class Connection(object):
             self._debug("Hostname detected: {}".format(self.hostname))
         else:
             self._debug("Hostname not known: {}".format(prompt))
+
 
 
     # Actions for FSM

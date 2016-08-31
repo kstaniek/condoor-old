@@ -39,27 +39,8 @@ class Connection(generic.Connection):
     This is a platform specific implementation of based Driver class
     """
     platform = 'NX-OS'
-    command_syntax_re = re.compile("% Invalid command at '\^' marker\.|"
-                                   "% Incomplete command at '\^' marker\.")
 
-    platform_prompt = generic.prompt_patterns['NX-OS']
-
-    password_prompt = re.compile("Password: ")
-    username_prompt = re.compile("login: ")
-    rommon_prompt = re.compile("loader >")
-    standby_console = re.compile("\(standby\)")
-
-    def prepare_prompt(self):
-        prompt_re = re.compile('({})(\([^()]*\))?#'.format(
-            re.escape(self.ctrl.detected_target_prompt[:-1])))
-        self.compiled_prompts[-1] = prompt_re
-        self.prompt = self.ctrl.detected_target_prompt
-
-    def determine_hostname(self, prompt):
-        result = re.search(r"^(.*)#", prompt)
-        if result:
-            self.hostname = result.group(1)
-            self._debug("Hostname detected: {}".format(self.hostname))
+    target_prompt_components = ['prompt_dynamic', 'prompt_default', 'rommon']
 
     def prepare_terminal_session(self):
         self.send('terminal len 0')

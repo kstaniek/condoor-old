@@ -44,13 +44,13 @@ import pexpect
 @delegate("_session", ("expect", "expect_exact", "sendline",
                        "isalive", "sendcontrol", "send", "read_nonblocking", "setecho"))
 class Controller(object):
-    def __init__(self, platform, hostname, hosts, account_manager=None, max_attempts=1, logfile=None):
+    def __init__(self, platform, hosts, account_manager=None, max_attempts=1, logfile=None):
         self.hosts = to_list(hosts)
         self.max_attempts = max_attempts
         self.account_mgr = account_manager
         self.session_log = logfile
-        self.hostname = hostname
         self.platform = platform
+        #self.hostname = platform.hostname
         self.connected = False
         self.authenticated = False
         self._session = None
@@ -60,6 +60,10 @@ class Controller(object):
         self.last_pattern = None
         self.logger = logging.getLogger("condoor.controller")
         self._clear_detected_prompts()
+
+    @property
+    def hostname(self):
+        return self.platform.hostname
 
     @property
     def before(self):

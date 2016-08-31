@@ -12,6 +12,7 @@ generic:
   standby:
     - XR
     - XR64
+    - NX-OS
   syntax_error:
     - XR
     - XR64
@@ -74,9 +75,15 @@ IOS:
     description: 'Command syntax error'
 
 NX-OS:
-  prompt: '[\w\-]+# '
+  prompt: '^(?P<hostname>.*?)(\([^()]*\))?#'
+  prompt_dynamic: '{prompt}(\([^()]*\))?#'
+  prompt_default: 'switch#'
   password: 'Password: '
-  username: 'login: '
+  username: '(.*?) login: '
   rommon: 'loader >'
   standby: '\(standby\)'
   syntax_error: '% Invalid command at ''\^'' marker\.'
+
+
+#command_syntax_re = re.compile("% Invalid command at '\^' marker\.|"
+#                                   "% Incomplete command at '\^' marker\.")
