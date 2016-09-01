@@ -45,13 +45,6 @@ class Connection(generic.Connection):
     This is a platform specific implementation of based Driver class
     """
     platform = 'IOS'
-
-    #platform_prompt = generic.prompt_patterns['IOS']
-
-    #password_prompt = re.compile("Password: ")
-    #username_prompt = re.compile("Username: ")
-    #rommon_prompt = re.compile("(rommon \d+ >)|(rommon>)")
-
     target_prompt_components = ['prompt_dynamic', 'prompt_default', 'rommon']
 
     def __init__(self, name, hosts, controller_class, logger, is_console=False, account_manager=None):
@@ -66,19 +59,6 @@ class Connection(generic.Connection):
         if enable_password is None:
             enable_password = hop_info.password
         return enable_password
-
-    # def prepare_prompt(self):
-    #     mode = self.ctrl.detected_target_prompt[-1]
-    #
-    #     # previously: '({})(\([^()]*\))?[#|>]'
-    #     # It is assumed that session stays in privilege mode
-    #     prompt_re = re.compile('({})(\([^()]*\))?#'.format(
-    #         re.escape(self.ctrl.detected_target_prompt[:-1])))
-    #     self.compiled_prompts[-1] = prompt_re
-    #     self.prompt = self.ctrl.detected_target_prompt
-    #
-    #     if mode == '>':
-    #         self.enable()
 
     def prepare_terminal_session(self):
         self.send('terminal len 0')

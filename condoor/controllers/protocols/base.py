@@ -38,33 +38,6 @@ from ...exceptions import \
 from ..fsm import action
 
 
-# used for unix jumphosts
-#PASSWORD_PROMPT = re.compile("[P|p]assword:\s?$")
-#USERNAME_PROMPT = re.compile("([U|u]sername:|login:)\s?$")
-# [sj20lab-as2:~] Cisco Linux - Red Hat Enterprise Linux Server release 6.6 (Santiago)
-#SHELL_PROMPT = re.compile("\$\s?|>\s?|#\s?|%\s?|\[.*:~\]")
-
-#PERMISSION_DENIED = "Permission denied"
-#AUTH_FAILED = "Authentication failed|not authorized|Login incorrect"
-#RESET_BY_PEER = "reset by peer|closed by foreign host"
-#RECONFIGURE_USERNAME_PROMPT = "[Nn][Oo] root-system username is configured"
-#SET_USERNAME = "[Ee]nter.*username:"
-#SET_PASSWORD = "Enter secret"
-#PASSWORD_OK = "[Pp]assword [Oo][Kk]"
-#PRESS_RETURN = "Press RETURN to get started\."
-#STANDBY_CONSOLE = "Standby console disabled"
-
-# Error when the hostname can't be resolved or there is
-# network reachability timeout
-# UNABLE_TO_CONNECT = "nodename nor servname provided, or not known|" \
-#                     "Unknown host|" \
-#                     "[Operation|Connection] timed out|" \
-#                     "[D|d]estination unreachable|" \
-#                     "[U|u]nable to connect|" \
-#                     "[C|c]onnection refused|" \
-#                     "command not found"
-
-
 class Protocol(object):
 
     def __init__(self, controller, node_info, prompt, get_pattern, account_manager=None, logfile=None):
@@ -258,14 +231,13 @@ class Protocol(object):
         password = self.password
         if not password:
             if self.account_manager:
-                self._dbg(20, "{}: {}: Acquiring password for {} from system KeyRing".format(
-                        self.protocol, self.hostname, self.username)
-                )
+                self._dbg(20,
+                          "{}: {}: Acquiring password for {} from system KeyRing".format(
+                              self.protocol, self.hostname, self.username))
                 password = self.account_manager.get_password(self.hostname, self.username, interact=True)
                 if not password:
                     self._dbg(30, "{}: {}: Password for {} does not exists in KeyRing".format(
-                            self.protocol, self.hostname, self.username)
-                    )
+                        self.protocol, self.hostname, self.username))
         return password
 
     @action

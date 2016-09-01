@@ -6,3 +6,4 @@ fixtures>=0.3.14
 mock>=1.0
 testtools>=0.9.32
 telnetsrv==0.4
+pyyaml

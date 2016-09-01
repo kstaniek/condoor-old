@@ -28,15 +28,11 @@
 # =============================================================================
 
 from base import Protocol
-#PASSWORD_OK, PRESS_RETURN, RESET_BY_PEER, UNABLE_TO_CONNECT, \
-#    AUTH_FAILED, PERMISSION_DENIED
 
 from ..fsm import FSM, action
 from ...utils import pattern_to_str
 
-from ...exceptions import \
-    ConnectionError, \
-    ConnectionTimeoutError
+from ...exceptions import ConnectionError, ConnectionTimeoutError
 
 import re
 import pexpect
@@ -47,6 +43,7 @@ ESCAPE_CHAR = "Escape character is|Open"
 CONNECTION_REFUSED = re.compile("Connection refused")
 PASSWORD_OK = "[Pp]assword [Oo][Kk]"
 AUTH_FAILED = "Authentication failed|not authorized|Login incorrect"
+
 
 class Telnet(Protocol):
     def __init__(self, controller, device, spawn, prompt, get_pattern, account_manager, logfile):
@@ -77,8 +74,6 @@ class Telnet(Protocol):
             (self.prompt_pattern, [0, 1, 5], 0, None, 10),
             (self.prompt_pattern, [6, 8, 5], -1, self.save_pattern, 0),
             (self.rommon_pattern, [0, 1], -1, self.save_pattern, 0),
-            #(UNABLE_TO_CONNECT, [0], -1, self.unable_to_connect, 0),
-            #(RESET_BY_PEER, [0, 1], -1, self.unable_to_connect, 0),
             (self.unable_to_connect_pattern, [0, 1], -1, self.unable_to_connect, 0),
             (pexpect.TIMEOUT, [0, 1], 5, self.send_new_line, 10),
             (pexpect.TIMEOUT, [5], -1, ConnectionTimeoutError("Connection timeout", self.hostname), 0)
@@ -91,12 +86,9 @@ class Telnet(Protocol):
 
         #                      0                      1                    2                    3
         events = [self.username_pattern, self.password_pattern, self.prompt_pattern, self.rommon_pattern,
-                  #       4                    5                6                 7            8
-                  self.unable_to_connect_pattern, CONNECTION_REFUSED,
-                  #RESET_BY_PEER, PERMISSION_DENIED,
-
-                  AUTH_FAILED,
-                  #      9               10
+                  #       4             5                   6             7
+                  self.unable_to_connect_pattern, CONNECTION_REFUSED, AUTH_FAILED,
+                  #      8                9
                   pexpect.TIMEOUT, pexpect.EOF]
 
         transitions = [
@@ -164,7 +156,6 @@ class TelnetConsole(Telnet):
         sm = FSM("TELNET-CONNECT", self.ctrl, events, transitions, init_pattern=self.ctrl.last_pattern)
         return sm.run()
 
-
     # def connect(self):
     #
     #     #              0            1                    2                      3                      4
@@ -201,4 +192,3 @@ class TelnetConsole(Telnet):
         self.logger.log(
             level, "[{}]: [TELNET-CONSOLE]: {}".format(self.ctrl.hostname, msg)
         )
-

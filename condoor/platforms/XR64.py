@@ -32,14 +32,9 @@ import re
 import generic
 import pexpect
 
-from ..exceptions import \
-    ConnectionError,\
-    ConnectionAuthenticationError, \
-    CommandSyntaxError, \
-    CommandTimeoutError
+from ..exceptions import ConnectionError, ConnectionAuthenticationError
 
 from ..controllers.fsm import FSM, action
-#from ..controllers.protocols.base import RECONFIGURE_USERNAME_PROMPT
 
 
 class Connection(generic.Connection):
@@ -104,7 +99,7 @@ class Connection(generic.Connection):
         RELOAD = "hw-module location all reload"
         CONFIRM_RELOAD = re.compile(re.escape("Reload hardware module ? [no,yes]"))
         STBY_CONSOLE = re.compile("ios con[0|1]/RS?P[0-1]/CPU[0-9] is in standby")
-
+        RECONFIGURE_USERNAME_PROMPT = re.compile("[Nn][Oo] root-system username is configured")
         DONE = re.compile(re.escape("[Done]"))
         CONFIGURATION_COMPLETED = re.compile("SYSTEM CONFIGURATION COMPLETED")
         CONFIGURATION_IN_PROCESS = re.compile("SYSTEM CONFIGURATION IN PROCESS")

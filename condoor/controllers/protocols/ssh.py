@@ -28,7 +28,6 @@
 # =============================================================================
 
 from base import Protocol
-#PRESS_RETURN, RESET_BY_PEER, UNABLE_TO_CONNECT
 
 import pexpect
 from ..fsm import FSM, action

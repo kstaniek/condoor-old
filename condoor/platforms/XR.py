@@ -31,14 +31,9 @@ import re
 import generic
 import pexpect
 
-from ..exceptions import \
-    ConnectionError,\
-    ConnectionAuthenticationError, \
-    CommandSyntaxError, \
-    CommandTimeoutError
+from ..exceptions import ConnectionError, ConnectionAuthenticationError, CommandSyntaxError, CommandTimeoutError
 
 from ..controllers.fsm import FSM, action
-from ..controllers.protocols.base import RECONFIGURE_USERNAME_PROMPT
 
 
 class Connection(generic.Connection):
@@ -69,7 +64,6 @@ class Connection(generic.Connection):
     def boot(self):
         pass
 
-
     def reload(self, rommon_boot_command="boot", reload_timeout=300, os="XR"):
         """
         RP/0/RSP0/CPU0:ASR9K-PE4#reload
@@ -90,6 +84,7 @@ class Connection(generic.Connection):
         DONE = re.compile(re.escape("[Done]"))
         CONFIGURATION_COMPLETED = re.compile("SYSTEM CONFIGURATION COMPLETED")
         CONFIGURATION_IN_PROCESS = re.compile("SYSTEM CONFIGURATION IN PROCESS")
+        RECONFIGURE_USERNAME_PROMPT = re.compile("[Nn][Oo] root-system username is configured")
         # CONSOLE = re.compile("ios con0/RSP0/CPU0 is now available"))
         CONSOLE = re.compile("ios con[0|1]/RS?P[0-1]/CPU0 is now available")
 
@@ -133,8 +128,8 @@ class Connection(generic.Connection):
         # ASR with IOSXR specific error when cmd is longer than 256 characters
         _BUFFER_OVERFLOW = re.compile("Error: input buffer overflow")
 
-        #                    0                         1                        2                        3
-        events = [self.syntax_error_re, self.connection_closed_re, self.compiled_prompts[-1],  self.press_return_re,
+        #                    0                         1                        2                       3
+        events = [self.syntax_error_re, self.connection_closed_re, self.compiled_prompts[-1], self.press_return_re,
                   #        4           5                 6                7
                   self.more_re, _BUFFER_OVERFLOW, pexpect.TIMEOUT, pexpect.EOF]
 

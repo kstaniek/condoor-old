@@ -786,4 +786,3 @@ class Connection(object):
 
         self._driver.detected_prompts = ddr['detected_prompts']
         self._driver.determine_hostname(self._prompt)
-

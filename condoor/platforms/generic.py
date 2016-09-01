@@ -38,9 +38,6 @@ from ..exceptions import \
     CommandTimeoutError
 
 from ..controllers.fsm import FSM, action
-
-#from ..controllers.protocols.base import PRESS_RETURN
-
 from ..patterns import YPatternManager
 
 _PROMPT_IOSXR = re.compile('\w+/\w+/\w+/\w+:.+#')
@@ -57,27 +54,6 @@ os_types = ['XR', 'CALVADOS', 'ROMMON', 'IOS', 'NX-OS']
 
 class Connection(object):
     platform = 'generic'
-    #shell_prompt = re.compile("\$\s?|>\s?|#\s?|%\s?|\[.*:~\]")
-    #connection_closed_re = re.compile("Connection closed")
-    #rommon_prompt = re.compile("rommon.*>")
-    #platform_prompt = re.compile('[\w\-]+[#>]')
-
-    #password_prompt = re.compile("[P|p]assword:\s?")
-    #username_prompt = re.compile("([U|u]sername:\s|login:\s?)")
-
-    # command_syntax_re = re.compile('\% Bad IP address or host name% Unknown command or computer name, '
-    #                                'or unable to find computer address|'
-    #                                '\% Ambiguous command:.*"|"'
-    #                                '\% Type "show \?" for a list of subcommands'
-    #                                '\%(w+)?for a list of subcommands|'
-    #                                '\% Ambiguous command:|'
-    #                                '\% Invalid input detected|'
-    #                                "\% Invalid command at .* marker")  # NX-OS
-
-    #press_return = re.compile("Press RETURN to get started\.")
-    #more = re.compile(" --More-- ")
-    #standby_console = re.compile("Standby console disabled|\(standby\)|Node is not ready or active for login")
-
     target_prompt_components = ['prompt_dynamic']
 
     def __init__(self, name, hosts, controller_class, logger, is_console=False, account_manager=None):
@@ -427,9 +403,6 @@ class Connection(object):
         self._debug("Mode: {}".format(self.mode))
 
     def determine_hostname(self, prompt):
-        self._debug("Hostname detecting not implemented for generic driver")
-
-    def determine_hostname(self, prompt):
         # self.prompt is a re pattern
         result = re.search(self.prompt_re, prompt)
         if result:
@@ -437,8 +410,6 @@ class Connection(object):
             self._debug("Hostname detected: {}".format(self.hostname))
         else:
             self._debug("Hostname not known: {}".format(prompt))
-
-
 
     # Actions for FSM
     @action
@@ -525,8 +496,8 @@ class Connection(object):
         return sm.run()
 
     def _wait_for_string(self, expected_string, timeout=60):
-        #                    0                         1                        2                  3
-        events = [self.syntax_error_re, self.connection_closed_re,  self.press_return_re, self.more_re,
+        #                    0                         1                      2                  3
+        events = [self.syntax_error_re, self.connection_closed_re, self.press_return_re, self.more_re,
                   #      4                5             6
                   pexpect.TIMEOUT, pexpect.EOF, expected_string]
 

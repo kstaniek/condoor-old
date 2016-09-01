@@ -38,6 +38,7 @@ from ..exceptions import \
 
 from ..utils import pattern_to_str
 
+
 def action(func):
     @wraps(func)
     def with_logging(*args, **kwargs):
@@ -226,6 +227,4 @@ class FSM(object):
             return False
 
     def _dbg(self, level, msg):
-        self.logger.log(
-            level, "[{}]: [{}] {}".format(self.ctrl.hostname, self.name, msg)
-        )
+        self.logger.log(level, "[{}]: [{}] {}".format(self.ctrl.hostname, self.name, msg))

@@ -171,12 +171,11 @@ class Controller(object):
         Gracefully disconnect from all the nodes
         """
         self._dbg(10, "Initializing the disconnection process")
-        #if self._session and self.isalive():
-            #self._dbg(10, "Disconnecting the sessions")
-            #self.sendline('\x03')
-            #self.sendcontrol(']')
-            #self.sendline('quit')
-
+        if self._session and self.isalive():
+            self._dbg(10, "Disconnecting the sessions")
+            self.sendline('\x03')
+            self.sendcontrol(']')
+            self.sendline('quit')
 
             # index = 0
             # hop = 0
