@@ -39,7 +39,8 @@ from ..exceptions import \
 
 from ..controllers.fsm import FSM, action
 
-from ..controllers.protocols.base import PRESS_RETURN
+#from ..controllers.protocols.base import PRESS_RETURN
+
 from ..patterns import YPatternManager
 
 _PROMPT_IOSXR = re.compile('\w+/\w+/\w+/\w+:.+#')

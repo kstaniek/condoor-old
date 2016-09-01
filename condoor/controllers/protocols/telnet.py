@@ -27,8 +27,10 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-from base import Protocol, PASSWORD_OK, PRESS_RETURN, RESET_BY_PEER, UNABLE_TO_CONNECT, \
-    AUTH_FAILED, PERMISSION_DENIED
+from base import Protocol
+#PASSWORD_OK, PRESS_RETURN, RESET_BY_PEER, UNABLE_TO_CONNECT, \
+#    AUTH_FAILED, PERMISSION_DENIED
+
 from ..fsm import FSM, action
 from ...utils import pattern_to_str
 
@@ -43,7 +45,8 @@ import pexpect
 ESCAPE_CHAR = "Escape character is|Open"
 # Connection refused i.e. line busy on TS
 CONNECTION_REFUSED = re.compile("Connection refused")
-
+PASSWORD_OK = "[Pp]assword [Oo][Kk]"
+AUTH_FAILED = "Authentication failed|not authorized|Login incorrect"
 
 class Telnet(Protocol):
     def __init__(self, controller, device, spawn, prompt, get_pattern, account_manager, logfile):
@@ -53,16 +56,16 @@ class Telnet(Protocol):
             self._spawn_session(command)
 
     def connect(self):
-        #              0            1                    2                      3                      4
-        events = [ESCAPE_CHAR, PRESS_RETURN, self.standby_pattern, self.username_pattern, self.password_pattern,
-                  #        5                    6                    7
-                  self.more_pattern, self.prompt_pattern, self.rommon_pattern,
+        #              0            1                    2                      3
+        events = [ESCAPE_CHAR, self.press_return_pattern, self.standby_pattern, self.username_pattern,
+                  #            4                   5                  6                     7
+                  self.password_pattern, self.more_pattern, self.prompt_pattern, self.rommon_pattern,
                   #       8                 9              10             11
-                  UNABLE_TO_CONNECT, RESET_BY_PEER, pexpect.TIMEOUT, PASSWORD_OK]
+                  self.unable_to_connect_pattern, pexpect.TIMEOUT, PASSWORD_OK]
 
         transitions = [
             (ESCAPE_CHAR, [0], 1, None, 20),
-            (PRESS_RETURN, [0, 1], 1, self.send_new_line, 10),
+            (self.press_return_pattern, [0, 1], 1, self.send_new_line, 10),
             (PASSWORD_OK, [0, 1], 1, self.send_new_line, 10),
             (self.standby_pattern, [0, 5], -1, ConnectionError("Standby console", self.hostname), 0),
             (self.username_pattern, [0, 1, 5, 6], -1, self.save_pattern, 0),
@@ -74,8 +77,9 @@ class Telnet(Protocol):
             (self.prompt_pattern, [0, 1, 5], 0, None, 10),
             (self.prompt_pattern, [6, 8, 5], -1, self.save_pattern, 0),
             (self.rommon_pattern, [0, 1], -1, self.save_pattern, 0),
-            (UNABLE_TO_CONNECT, [0], -1, self.unable_to_connect, 0),
-            (RESET_BY_PEER, [0, 1], -1, self.unable_to_connect, 0),
+            #(UNABLE_TO_CONNECT, [0], -1, self.unable_to_connect, 0),
+            #(RESET_BY_PEER, [0, 1], -1, self.unable_to_connect, 0),
+            (self.unable_to_connect_pattern, [0, 1], -1, self.unable_to_connect, 0),
             (pexpect.TIMEOUT, [0, 1], 5, self.send_new_line, 10),
             (pexpect.TIMEOUT, [5], -1, ConnectionTimeoutError("Connection timeout", self.hostname), 0)
         ]
@@ -88,7 +92,10 @@ class Telnet(Protocol):
         #                      0                      1                    2                    3
         events = [self.username_pattern, self.password_pattern, self.prompt_pattern, self.rommon_pattern,
                   #       4                    5                6                 7            8
-                  UNABLE_TO_CONNECT, CONNECTION_REFUSED, RESET_BY_PEER, PERMISSION_DENIED, AUTH_FAILED,
+                  self.unable_to_connect_pattern, CONNECTION_REFUSED,
+                  #RESET_BY_PEER, PERMISSION_DENIED,
+
+                  AUTH_FAILED,
                   #      9               10
                   pexpect.TIMEOUT, pexpect.EOF]
 
@@ -128,17 +135,16 @@ class Telnet(Protocol):
 
 class TelnetConsole(Telnet):
     def connect(self):
-
-        #              0            1                    2                      3                      4
-        events = [ESCAPE_CHAR, PRESS_RETURN, self.standby_pattern, self.username_pattern, self.password_pattern,
-                  #        5                    6                    7
-                  self.more_pattern, self.prompt_pattern, self.rommon_pattern,
+        #              0            1                    2                      3
+        events = [ESCAPE_CHAR, self.press_return_pattern, self.standby_pattern, self.username_pattern,
+                  #            4                   5                  6                     7
+                  self.password_pattern, self.more_pattern, self.prompt_pattern, self.rommon_pattern,
                   #       8                 9              10             11
-                  UNABLE_TO_CONNECT, RESET_BY_PEER, pexpect.TIMEOUT, PASSWORD_OK]
+                  self.unable_to_connect_pattern, pexpect.TIMEOUT, PASSWORD_OK]
 
         transitions = [
             (ESCAPE_CHAR, [0], 1, self.send_new_line, 20),
-            (PRESS_RETURN, [0, 1], 1, self.send_new_line, 10),
+            (self.press_return_pattern, [0, 1], 1, self.send_new_line, 10),
             (PASSWORD_OK, [0, 1], 1, self.send_new_line, 10),
             (self.standby_pattern, [0, 5], -1, ConnectionError("Standby console", self.hostname), 0),
             (self.username_pattern, [0, 1, 5, 6], -1, self.save_pattern, 0),
@@ -147,17 +153,49 @@ class TelnetConsole(Telnet):
             # router sends it again to delete
             (self.more_pattern, [7], 8, None, 10),
             # (prompt, [0, 1, 5], 6, self.send_new_line, 10),
-            (self.prompt_pattern, [0, 5], 0, None, 10),
-            (self.prompt_pattern, [1, 6, 8, 5], -1, self.save_pattern, 0),
+            (self.prompt_pattern, [0, 1, 5], 0, None, 10),
+            (self.prompt_pattern, [6, 8, 5], -1, self.save_pattern, 0),
             (self.rommon_pattern, [0, 1], -1, self.save_pattern, 0),
-            (UNABLE_TO_CONNECT, [0], -1, self.unable_to_connect, 0),
-            (RESET_BY_PEER, [0, 1], -1, self.unable_to_connect, 0),
+            (self.unable_to_connect_pattern, [0, 1], -1, self.unable_to_connect, 0),
             (pexpect.TIMEOUT, [0, 1], 5, self.send_new_line, 10),
             (pexpect.TIMEOUT, [5], -1, ConnectionTimeoutError("Connection timeout", self.hostname), 0)
         ]
         self._dbg(10, "EXPECTED_PROMPT={}".format(pattern_to_str(self.prompt_pattern)))
         sm = FSM("TELNET-CONNECT", self.ctrl, events, transitions, init_pattern=self.ctrl.last_pattern)
         return sm.run()
+
+
+    # def connect(self):
+    #
+    #     #              0            1                    2                      3                      4
+    #     events = [ESCAPE_CHAR, PRESS_RETURN, self.standby_pattern, self.username_pattern, self.password_pattern,
+    #               #        5                    6                    7
+    #               self.more_pattern, self.prompt_pattern, self.rommon_pattern,
+    #               #       8                 9              10             11
+    #               UNABLE_TO_CONNECT, RESET_BY_PEER, pexpect.TIMEOUT, PASSWORD_OK]
+    #
+    #     transitions = [
+    #         (ESCAPE_CHAR, [0], 1, self.send_new_line, 20),
+    #         (PRESS_RETURN, [0, 1], 1, self.send_new_line, 10),
+    #         (PASSWORD_OK, [0, 1], 1, self.send_new_line, 10),
+    #         (self.standby_pattern, [0, 5], -1, ConnectionError("Standby console", self.hostname), 0),
+    #         (self.username_pattern, [0, 1, 5, 6], -1, self.save_pattern, 0),
+    #         (self.password_pattern, [0, 1, 5], -1, self.save_pattern, 0),
+    #         (self.more_pattern, [0, 5], 7, self.send_q, 10),
+    #         # router sends it again to delete
+    #         (self.more_pattern, [7], 8, None, 10),
+    #         # (prompt, [0, 1, 5], 6, self.send_new_line, 10),
+    #         (self.prompt_pattern, [0, 5], 0, None, 10),
+    #         (self.prompt_pattern, [1, 6, 8, 5], -1, self.save_pattern, 0),
+    #         (self.rommon_pattern, [0, 1], -1, self.save_pattern, 0),
+    #         (UNABLE_TO_CONNECT, [0], -1, self.unable_to_connect, 0),
+    #         (RESET_BY_PEER, [0, 1], -1, self.unable_to_connect, 0),
+    #         (pexpect.TIMEOUT, [0, 1], 5, self.send_new_line, 10),
+    #         (pexpect.TIMEOUT, [5], -1, ConnectionTimeoutError("Connection timeout", self.hostname), 0)
+    #     ]
+    #     self._dbg(10, "EXPECTED_PROMPT={}".format(pattern_to_str(self.prompt_pattern)))
+    #     sm = FSM("TELNET-CONNECT", self.ctrl, events, transitions, init_pattern=self.ctrl.last_pattern)
+    #     return sm.run()
 
     def _dbg(self, level, msg):
         self.logger.log(

@@ -39,7 +39,7 @@ from ..exceptions import \
     CommandTimeoutError
 
 from ..controllers.fsm import FSM, action
-from ..controllers.protocols.base import RECONFIGURE_USERNAME_PROMPT
+#from ..controllers.protocols.base import RECONFIGURE_USERNAME_PROMPT
 
 
 class Connection(generic.Connection):

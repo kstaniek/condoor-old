@@ -27,7 +27,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-from base import Protocol, PRESS_RETURN, RESET_BY_PEER, UNABLE_TO_CONNECT
+from base import Protocol
+#PRESS_RETURN, RESET_BY_PEER, UNABLE_TO_CONNECT
 
 import pexpect
 from ..fsm import FSM, action
@@ -65,9 +66,9 @@ class SSH(Protocol):
         return command
 
     def connect(self):
-        #                      0                    1                 2                 3                      4
-        events = [self.password_pattern, self.prompt_pattern, UNABLE_TO_CONNECT, RESET_BY_PEER,
-                  #   4           5             6                  7                  8
+        #                      0                    1                 2                 3
+        events = [self.password_pattern, self.prompt_pattern, self.unable_to_connect_pattern,
+                  #   4           5               6               7                   8
                   NEWSSHKEY, KNOWN_HOSTS, HOST_KEY_FAILED, MODULUS_TOO_SMALL, PROTOCOL_DIFFER,
                   #      9
                   pexpect.TIMEOUT]
@@ -76,9 +77,7 @@ class SSH(Protocol):
             (self.password_pattern, [0, 1, 4, 5], -1, self.save_pattern, 0),
             (self.prompt_pattern, [0], -1, self.save_pattern, 0),
             #  cover all messages indicating that connection was not set up
-            (UNABLE_TO_CONNECT, [0], -1, self.unable_to_connect, 0),
-            #  not sure when it happens - saw if there was session timeout on router
-            (RESET_BY_PEER, [0], -1, self.unable_to_connect, 0),
+            (self.unable_to_connect_pattern, [0], -1, self.unable_to_connect, 0),
             (NEWSSHKEY, [0], 1, self.send_yes, 10),
             (KNOWN_HOSTS, [0, 1], 0, None, 0),
             (HOST_KEY_FAILED, [0], -1, ConnectionError("Host key failed", self.hostname), 0),
@@ -95,10 +94,10 @@ class SSH(Protocol):
 
     def authenticate(self):
         #              0                     1                    2                3
-        events = [PRESS_RETURN, self.password_pattern, self.prompt_pattern, pexpect.TIMEOUT]
+        events = [self.press_return_pattern, self.password_pattern, self.prompt_pattern, pexpect.TIMEOUT]
 
         transitions = [
-            (PRESS_RETURN, [0, 1], 1, self.send_new_line, 10),
+            (self.press_return_pattern, [0, 1], 1, self.send_new_line, 10),
             (self.password_pattern, [0], 1, self.send_pass, 20),
             (self.password_pattern, [1], -1, ConnectionAuthenticationError("Authentication error", self.hostname), 0),
             (self.prompt_pattern, [0, 1], -1, None, 0),

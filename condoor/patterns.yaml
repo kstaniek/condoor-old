@@ -26,6 +26,19 @@ generic:
     pattern: 'Connection closed'
     description: 'Connection closed'
 
+  unable_to_connect:
+    pattern: 'nodename nor servname provided, or not known|
+      [Uu]nknown host|
+      [Oo]peration timed out|
+      [Cc]onnection timed out|
+      [Dd]estination unreachable|
+      [Uu]nable to connect|
+      [Cc]onnection refused|
+      command not found|
+      reset by peer|
+      closed by foreign host'
+
+
 
 jumphost:
   prompt: '\$\s?|>\s?|#\s?|%\s?|\[.*:~\]'

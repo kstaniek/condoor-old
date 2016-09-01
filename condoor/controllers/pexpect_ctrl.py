@@ -37,8 +37,6 @@ from ..utils import delegate
 from ..controllers.protocols import make_protocol
 from ..exceptions import ConnectionError, ConnectionTimeoutError
 
-import pexpect
-
 
 # Delegate following methods to _session class
 @delegate("_session", ("expect", "expect_exact", "sendline",
@@ -50,7 +48,6 @@ class Controller(object):
         self.account_mgr = account_manager
         self.session_log = logfile
         self.platform = platform
-        #self.hostname = platform.hostname
         self.connected = False
         self.authenticated = False
         self._session = None

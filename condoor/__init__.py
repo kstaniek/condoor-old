@@ -255,6 +255,7 @@ class Connection(object):
             module = sys.modules[module_str]
             driver_class = getattr(module, 'Connection')
         except ImportError:
+            raise
             raise GeneralError("Platform {} not supported".format(self.platform))
 
         driver = driver_class(

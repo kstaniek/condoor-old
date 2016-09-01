@@ -1,5 +1,4 @@
 # =============================================================================
-# protocol
 #
 # Copyright (c)  2016, Cisco Systems
 # All rights reserved.
@@ -40,30 +39,30 @@ from ..fsm import action
 
 
 # used for unix jumphosts
-PASSWORD_PROMPT = re.compile("[P|p]assword:\s?$")
-USERNAME_PROMPT = re.compile("([U|u]sername:|login:)\s?$")
+#PASSWORD_PROMPT = re.compile("[P|p]assword:\s?$")
+#USERNAME_PROMPT = re.compile("([U|u]sername:|login:)\s?$")
 # [sj20lab-as2:~] Cisco Linux - Red Hat Enterprise Linux Server release 6.6 (Santiago)
-SHELL_PROMPT = re.compile("\$\s?|>\s?|#\s?|%\s?|\[.*:~\]")
+#SHELL_PROMPT = re.compile("\$\s?|>\s?|#\s?|%\s?|\[.*:~\]")
 
-PERMISSION_DENIED = "Permission denied"
-AUTH_FAILED = "Authentication failed|not authorized|Login incorrect"
-RESET_BY_PEER = "reset by peer|closed by foreign host"
-RECONFIGURE_USERNAME_PROMPT = "[Nn][Oo] root-system username is configured"
-SET_USERNAME = "[Ee]nter.*username:"
-SET_PASSWORD = "Enter secret"
-PASSWORD_OK = "[Pp]assword [Oo][Kk]"
-PRESS_RETURN = "Press RETURN to get started\."
-STANDBY_CONSOLE = "Standby console disabled"
+#PERMISSION_DENIED = "Permission denied"
+#AUTH_FAILED = "Authentication failed|not authorized|Login incorrect"
+#RESET_BY_PEER = "reset by peer|closed by foreign host"
+#RECONFIGURE_USERNAME_PROMPT = "[Nn][Oo] root-system username is configured"
+#SET_USERNAME = "[Ee]nter.*username:"
+#SET_PASSWORD = "Enter secret"
+#PASSWORD_OK = "[Pp]assword [Oo][Kk]"
+#PRESS_RETURN = "Press RETURN to get started\."
+#STANDBY_CONSOLE = "Standby console disabled"
 
 # Error when the hostname can't be resolved or there is
 # network reachability timeout
-UNABLE_TO_CONNECT = "nodename nor servname provided, or not known|" \
-                    "Unknown host|" \
-                    "[Operation|Connection] timed out|" \
-                    "[D|d]estination unreachable|" \
-                    "[U|u]nable to connect|" \
-                    "[C|c]onnection refused|" \
-                    "command not found"
+# UNABLE_TO_CONNECT = "nodename nor servname provided, or not known|" \
+#                     "Unknown host|" \
+#                     "[Operation|Connection] timed out|" \
+#                     "[D|d]estination unreachable|" \
+#                     "[U|u]nable to connect|" \
+#                     "[C|c]onnection refused|" \
+#                     "command not found"
 
 
 class Protocol(object):
@@ -94,6 +93,8 @@ class Protocol(object):
         self.more_pattern = get_pattern('more')
         self.rommon_pattern = get_pattern('rommon')
         self.standby_pattern = get_pattern('standby')
+        self.press_return_pattern = get_pattern('press_return')
+        self.unable_to_connect_pattern = get_pattern('unable_to_connect')
 
     def _spawn_session(self, command):
         self._dbg(10, "Executing command: '{}'".format(command))
