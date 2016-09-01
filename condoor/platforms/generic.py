@@ -412,7 +412,6 @@ class Connection(object):
                 raise ConnectionError("Unexpected session disconnect", host=self.hostname)
 
             except Exception as err:
-                raise
                 error_msg = str(err)
                 self._error("Exception: {}:{}".format(err.__class__, error_msg))
                 raise ConnectionError(message=error_msg, host=self.hostname)
@@ -475,7 +474,7 @@ class Connection(object):
     def _stays_connected(self, ctx):
         self.ctrl.connected = True
         self.ctrl.last_hop = len(self.ctrl.hosts) - 1  # Authentication needed
-        self.ctrl.last_pattern = PRESS_RETURN
+        self.ctrl.last_pattern = ctx.ctrl.platform.press_return_re
         return True
 
     @action
@@ -551,9 +550,6 @@ class Connection(object):
 
         sm = FSM("WAIT-4-STR", self.ctrl, events, transitions, timeout=timeout)
         return sm.run()
-
-    #def prepare_prompt(self):
-    #    self.prompt = self.ctrl.detected_target_prompt
 
     def _debug(self, msg):
         self.logger.debug("[{}]: {}".format(self.hostname, msg))
