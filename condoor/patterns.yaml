@@ -42,7 +42,8 @@ generic:
 
 jumphost:
   prompt: '\$\s?|>\s?|#\s?|%\s?|\[.*:~\]'
-  username: '[U|u]sername:\s|login:\s?'
+  # do not match 'Last login: Wed ....'
+  username: '[U|u]sername:\s|^.*(?<![Ll]ast )login:'
   password: '[P|p]assword:\s?$'
   syntax_error:
     pattern: 'command not found'
