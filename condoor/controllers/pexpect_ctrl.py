@@ -173,6 +173,7 @@ class Controller(object):
         self._dbg(10, "Initializing the disconnection process")
         if self._session and self.isalive():
             self._dbg(10, "Disconnecting the sessions")
+            self.sendline('\x04')
             self.sendline('\x03')
             self.sendcontrol(']')
             self.sendline('quit')
