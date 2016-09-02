@@ -1,0 +1,19 @@
+
+root connected from 127.0.0.1 using console on xr-vm_node0_RSP0_CPU0
+sysadmin-vm:0_RSP0# terminal length 0
+Fri Sep  2  13:57:19.334 UTC
+sysadmin-vm:0_RSP0# show install committed
+Fri Sep  2  13:57:19.367 UTC
+ Node 0/RSP0 [RP]
+    Committed Packages: 1
+       asr9k-sysadmin-6.2.1.11I version=6.2.1.11I [Boot image]
+
+ Node 0/RSP1 [RP]
+    Committed Packages: 1
+       asr9k-sysadmin-6.2.1.11I version=6.2.1.11I [Boot image]
+
+ Node 0/1 [LC]
+    Committed Packages: 1
+       asr9k-sysadmin-6.2.1.11I version=6.2.1.11I [Boot image]
+
+sysadmin-vm:0_RSP0#
