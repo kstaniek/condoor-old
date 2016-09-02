@@ -1,0 +1,10 @@
+
+root connected from 127.0.0.1 using console on xr-vm_node0_RSP0_CPU0
+sysadmin-vm:0_RSP0# terminal length 0
+Fri Sep  2  14:00:27.596 UTC
+sysadmin-vm:0_RSP0# show inventory chassis
+Fri Sep  2  14:00:27.628 UTC
+
+ Name: Rack 0                Descr: ASR-9904 AC Chassis
+ PID: ASR-9904-AC            VID: V01                   SN: FOX1739G95R
+sysadmin-vm:0_RSP0#

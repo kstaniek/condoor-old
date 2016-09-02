@@ -1,0 +1,3 @@
+Wed Feb 10 14:36:04.427 UTC
+NAME: "chassis ASR-9904-AC", DESCR: "ASR 9904 2 Line Card Slot Chassis with V2 AC PEM"
+PID: ASR-9904-AC, VID: V01, SN: FOX1830GT5W

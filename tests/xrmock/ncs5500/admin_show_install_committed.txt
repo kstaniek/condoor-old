@@ -1,0 +1,60 @@
+Wed Jul 27 13:10:39.946 CEST
+
+iox connected from 127.0.0.1 using console on xr-vm_node0_RP0_CPU0
+sysadmin-vm:0_RP0# terminal length 0
+Wed Jul  27 11:10:40.402 UTC
+sysadmin-vm:0_RP0# show install committed
+Wed Jul  27 11:10:40.494 UTC
+ Node 0/RP0 [RP]
+    Committed Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/RP1 [RP]
+    Committed Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/0 [LC]
+    Committed Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/1 [LC]
+    Committed Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/2 [LC]
+    Committed Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/SC0 [XC]
+    Committed Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/SC1 [XC]
+    Committed Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/FC0 [FABRIC]
+    Committed Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/FC1 [FABRIC]
+    Committed Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/FC2 [FABRIC]
+    Committed Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/FC3 [FABRIC]
+    Committed Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/FC4 [FABRIC]
+    Committed Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+ Node 0/FC5 [FABRIC]
+    Committed Packages: 1
+       ncs5500-sysadmin-6.0.1 version=6.0.1 [Boot image]
+
+sysadmin-vm:0_RP0#

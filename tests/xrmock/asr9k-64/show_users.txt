@@ -1,0 +1,3 @@
+   Line            User                 Service  Conns   Idle        Location
+*  con0/RSP0/CPU0  root                 hardware     0  00:00:00
+   vty0            root                 telnet       0  12:06:04     171.71.190.144

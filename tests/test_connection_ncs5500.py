@@ -36,14 +36,14 @@ import sys
 import os
 
 
-class ASR9K64Handler(XRHandler):
-    platform = "ASR9K-64"
+class NCS5500Handler(XRHandler):
+    platform = "NCS5500"
 
 
-class TestASR9K64Connection(TestCase):
+class TestNCS5500Connection(TestCase):
 
     def setUp(self):
-        self.server = TelnetServer(("127.0.0.1", 10023), ASR9K64Handler)
+        self.server = TelnetServer(("127.0.0.1", 10023), NCS5500Handler)
         self.server_thread = Thread(target=self.server.serve_forever)
         self.server_thread.daemon = True
         self.server_thread.start()
@@ -63,7 +63,7 @@ class TestASR9K64Connection(TestCase):
         self.server.server_close()
         self.server_thread.join()
 
-    def test_ASR9K64_1_discovery(self):
+    def test_NCS5500_1_discovery(self):
         urls = ["telnet://admin:admin@127.0.0.1:10023"]
         conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)
         self.conn = conn
@@ -71,26 +71,26 @@ class TestASR9K64Connection(TestCase):
 
         self.assertEqual(conn._discovered, True, "Not discovered properly")
         self.assertEqual(conn.hostname, "ios", "Wrong Hostname: {}".format(conn.hostname))
-        self.assertEqual(conn.family, "ASR9K", "Wrong Family: {}".format(conn.family))
-        self.assertEqual(conn.platform, "ASR-9904", "Wrong Platform: {}".format(conn.platform))
+        self.assertEqual(conn.family, "NCS5500", "Wrong Family: {}".format(conn.family))
+        self.assertEqual(conn.platform, "NCS-5508", "Wrong Platform: {}".format(conn.platform))
         self.assertEqual(conn.os_type, "eXR", "Wrong OS Type: {}".format(conn.os_type))
-        self.assertEqual(conn.os_version, "6.2.1.11I", "Wrong Version: {}".format(conn.os_version))
+        self.assertEqual(conn.os_version, "6.0.1", "Wrong Version: {}".format(conn.os_version))
         self.assertEqual(conn.udi['name'], "Rack 0", "Wrong Name: {}".format(conn.udi['name']))
-        self.assertEqual(conn.udi['description'], "ASR-9904 AC Chassis",
+        self.assertEqual(conn.udi['description'], "NCS5500 8 Slot Single Chassis",
                          "Wrong Description: {}".format(conn.udi['description']))
-        self.assertEqual(conn.udi['pid'], "ASR-9904-AC", "Wrong PID: {}".format(conn.udi['pid']))
+        self.assertEqual(conn.udi['pid'], "NCS-5508", "Wrong PID: {}".format(conn.udi['pid']))
         self.assertEqual(conn.udi['vid'], "V01", "Wrong VID: {}".format(conn.udi['vid']))
-        self.assertEqual(conn.udi['sn'], "FOX1739G95R", "Wrong S/N: {}".format(conn.udi['sn']))
+        self.assertEqual(conn.udi['sn'], "FGE194714QX", "Wrong S/N: {}".format(conn.udi['sn']))
         self.assertEqual(conn.prompt, "RP/0/RP0/CPU0:ios#", "Wrong Prompt: {}".format(conn.prompt))
 
-    def test_ASR9K64_2_connection_wrong_user(self):
+    def test_NCS5500_2_connection_wrong_user(self):
         urls = ["telnet://root:admin@127.0.0.1:10023"]
         self.conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)
 
         with self.assertRaises(condoor.ConnectionError):
             self.conn.connect(self.logfile_condoor)
 
-    def test_ASR9K64_3_connection_refused(self):
+    def test_NCS5500_3_connection_refused(self):
         urls = ["telnet://admin:admin@127.0.0.1:10024"]
         self.conn = condoor.Connection("host", urls, log_session=self.log_session,  log_level=self.log_level)
         with self.assertRaises(condoor.ConnectionError):

@@ -1,0 +1,17 @@
+Node 0/RSP0/CPU0 [RP]
+  Boot Partition: xr_lv0
+  Committed Packages: 2
+        asr9k-xr-6.2.1.11I version=6.2.1.11I [Boot image]
+        asr9k-k9sec-x64-3.1.0.0-r62111I
+
+Node 0/RSP1/CPU0 [RP]
+  Boot Partition: xr_lv0
+  Committed Packages: 2
+        asr9k-xr-6.2.1.11I version=6.2.1.11I [Boot image]
+        asr9k-k9sec-x64-3.1.0.0-r62111I
+
+Node 0/1/CPU0 [LC]
+  Boot Partition: xr_lv0
+  Committed Packages: 2
+        asr9k-xr-6.2.1.11I version=6.2.1.11I [Boot image]
+        asr9k-k9sec-x64-3.1.0.0-r62111I

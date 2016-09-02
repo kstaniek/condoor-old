@@ -1,0 +1,13 @@
+
+root connected from 127.0.0.1 using console on xr-vm_node0_RSP0_CPU0
+sysadmin-vm:0_RSP0# terminal length 0
+Fri Sep  2  13:59:41.803 UTC
+sysadmin-vm:0_RSP0# show install inactive
+Fri Sep  2  13:59:41.837 UTC
+ Node 0/RSP0 [RP]
+    Inactive Packages:
+ Node 0/RSP1 [RP]
+    Inactive Packages:
+ Node 0/1 [LC]
+    Inactive Packages:
+sysadmin-vm:0_RSP0#

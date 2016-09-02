@@ -1,0 +1,34 @@
+Wed Jul 27 13:09:36.620 CEST
+
+iox connected from 127.0.0.1 using console on xr-vm_node0_RP0_CPU0
+sysadmin-vm:0_RP0# terminal length 0
+Wed Jul  27 11:09:37.890 UTC
+sysadmin-vm:0_RP0# show install inactive
+Wed Jul  27 11:09:37.174 UTC
+ Node 0/RP0 [RP]
+    Inactive Packages:
+ Node 0/RP1 [RP]
+    Inactive Packages:
+ Node 0/0 [LC]
+    Inactive Packages:
+ Node 0/1 [LC]
+    Inactive Packages:
+ Node 0/2 [LC]
+    Inactive Packages:
+ Node 0/SC0 [XC]
+    Inactive Packages:
+ Node 0/SC1 [XC]
+    Inactive Packages:
+ Node 0/FC0 [FABRIC]
+    Inactive Packages:
+ Node 0/FC1 [FABRIC]
+    Inactive Packages:
+ Node 0/FC2 [FABRIC]
+    Inactive Packages:
+ Node 0/FC3 [FABRIC]
+    Inactive Packages:
+ Node 0/FC4 [FABRIC]
+    Inactive Packages:
+ Node 0/FC5 [FABRIC]
+    Inactive Packages:
+sysadmin-vm:0_RP0#
