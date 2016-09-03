@@ -210,6 +210,8 @@ class Connection(object):
         except IOError:
             self._session_fd = None
 
+        self.logger.info("Condoor version {}".format(__version__))
+
     def __del__(self):
         self.logger.removeHandler(self._handler)
 
