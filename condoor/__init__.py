@@ -257,7 +257,6 @@ class Connection(object):
             module = sys.modules[module_str]
             driver_class = getattr(module, 'Connection')
         except ImportError:
-            raise
             raise GeneralError("Platform {} not supported".format(self.platform))
 
         driver = driver_class(
@@ -579,7 +578,6 @@ class Connection(object):
                 else:
                     self._shift_driver()
             except AttributeError:
-                raise
                 raise ConnectionError("Platform unknown. Try detect platform first")
 
         else:
@@ -734,8 +732,13 @@ class Connection(object):
     @property
     def udi(self):
         """Returns the dict representing the udi hardware record::
-
-            {'description': 'ASR-9904 AC Chassis', 'name': 'Rack 0', 'pid': 'ASR-9904-AC', 'sn': 'FOX1830GT5W ', 'vid': 'V01'}
+            {
+            'description': 'ASR-9904 AC Chassis',
+            'name': 'Rack 0',
+            'pid': 'ASR-9904-AC',
+            'sn': 'FOX1830GT5W ',
+            'vid': 'V01'
+            }
 
         """
         return self._udi
@@ -743,8 +746,12 @@ class Connection(object):
     @property
     def device_info(self):
         """Returns the dict represeing the device info record::
-
-            {'family': 'ASR9K', 'os_type': 'eXR', 'os_version': '6.1.0.06I', 'platform': 'ASR-9904'}
+            {
+            'family': 'ASR9K',
+            'os_type': 'eXR',
+            'os_version': '6.1.0.06I',
+            'platform': 'ASR-9904'
+            }
 
         """
         _device_info = {

@@ -109,7 +109,7 @@ class Connection(generic.Connection):
         ]
 
         self.ctrl.sendline(RELOAD)
-        events = [RELOAD_NA, RELOAD, DONE, PROCEED, CONFIGURATION_IN_PROCESS, self.rommon_re, self.press_return,
+        events = [RELOAD_NA, RELOAD, DONE, PROCEED, CONFIGURATION_IN_PROCESS, self.rommon_re, self.press_return_re,
                   CONSOLE, CONFIGURATION_COMPLETED, RECONFIGURE_USERNAME_PROMPT,
                   pexpect.TIMEOUT, pexpect.EOF]
         transitions = [
@@ -118,7 +118,7 @@ class Connection(generic.Connection):
             (RELOAD_NA, [1], -1, self._reload_na, 0),
             (DONE, [1], 2, None, 120),
             (PROCEED, [2], 3, self._send_lf, reload_timeout),
-            (self.rommon_prompt, [0, 3], 4, self._send_boot, 600),
+            (self.rommon_re, [0, 3], 4, self._send_boot, 600),
         ] + transitions_shared
 
         fs = FSM("RELOAD", self.ctrl, events, transitions, timeout=10)

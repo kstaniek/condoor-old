@@ -86,7 +86,7 @@ class AccountManager(object):
         section = self._find_section(realm)
         config_user_name = self._get_username(section)
         if not config_user_name or username != config_user_name:
-                return None
+            return None
 
         if not username:
             username = config_user_name

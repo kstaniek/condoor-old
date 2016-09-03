@@ -62,7 +62,7 @@ class PatternManager(object):
         patterns = self._dict.get(platform, None)
 
         if patterns is None:
-            raise KeyError("Unknown platform".format(platform))
+            raise KeyError("Unknown platform: {}".format(platform))
 
         generic_patterns = self._dict.get('generic', None)
 
@@ -124,8 +124,8 @@ class PatternManager(object):
         else:
             return pattern
 
-    def get_pattern_description(self, platform, key, compiled=True):
-        patterns, generic_patterns = self._get_platform_patterns(platform, compiled=compiled)
+    def get_pattern_description(self, platform, key):
+        patterns, generic_patterns = self._get_platform_patterns(platform)
         pattern = patterns.get(key, generic_patterns.get(key, None))
         if isinstance(pattern, dict):
             description = pattern.get('description', None)

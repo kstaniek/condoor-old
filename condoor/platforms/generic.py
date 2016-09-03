@@ -29,8 +29,8 @@
 
 
 import re
-import pexpect
 from threading import Lock
+import pexpect
 
 from ..exceptions import \
     ConnectionError,\
@@ -239,10 +239,9 @@ class Connection(object):
             enable_password (str): The privileged mode password. This is optional parameter. If password is not
                 provided but required the password from url will be used. Refer to :class:`condoor.Connection`
         """
-        pass
         self._info("Priviledge mode not supported on {} platform".format(self.platform))
 
-    def reload(self, rommon_boot_command="boot"):
+    def reload(self, rommon_boot_command="boot", reload_timeout=300):
         """This method reloads the device and waits for device to boot up. It post the informational message to the
         log if not implemented by device driver."""
 

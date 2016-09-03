@@ -114,7 +114,7 @@ class Connection(generic.Connection):
         transitions_shared = [
             # here must be authentication
             (CONSOLE, [3, 4], 5, None, 600),
-            (self.press_return, [5], 6, self._send_lf, 300),
+            (self.press_return_re, [5], 6, self._send_lf, 300),
             # if asks for username/password reconfiguration, go to success state and let plugin handle the rest.
             (RECONFIGURE_USERNAME_PROMPT, [6, 7], -1, None, 0),
             (CONFIGURATION_IN_PROCESS, [6], 7, None, 180),
@@ -132,7 +132,7 @@ class Connection(generic.Connection):
         self.send(cmd=ADMIN)
         self.ctrl.sendline(RELOAD)
 
-        events = [RELOAD_NA, RELOAD, CONFIRM_RELOAD, DONE, STBY_CONSOLE, CONFIGURATION_IN_PROCESS, self.press_return,
+        events = [RELOAD_NA, RELOAD, CONFIRM_RELOAD, DONE, STBY_CONSOLE, CONFIGURATION_IN_PROCESS, self.press_return_re,
                   CONSOLE, CONFIGURATION_COMPLETED, RECONFIGURE_USERNAME_PROMPT, pexpect.TIMEOUT, pexpect.EOF]
 
         transitions = [

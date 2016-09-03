@@ -29,8 +29,8 @@
 
 import logging
 from functools import wraps
-from pexpect import EOF
 from time import time
+from pexpect import EOF
 
 
 from ..exceptions import \
@@ -204,7 +204,7 @@ class FSM(object):
                         self._dbg(10, "No action")
                     else:
                         self._dbg(40, "FSM Action is not callable: {}".format(action.__name__))
-                        raise Exception("FSM Action is not callable")
+                        raise RuntimeWarning("FSM Action is not callable")
 
                     if next_timeout != 0:  # no change if set to 0
                         timeout = next_timeout
@@ -222,9 +222,9 @@ class FSM(object):
                 self._dbg(10, "FSM finished at E={},S={}".format(ctx.event, ctx.state))
                 return True
 
-        else:  # check while else if even exists
-            self._dbg(40, "FSM looped. Exiting")
-            return False
+        # check while else if even exists
+        self._dbg(40, "FSM looped. Exiting")
+        return False
 
     def _dbg(self, level, msg):
         self.logger.log(level, "[{}]: [{}] {}".format(self.ctrl.hostname, self.name, msg))

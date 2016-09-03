@@ -29,12 +29,12 @@
 
 
 from collections import defaultdict
+from functools import partial
 
 from base import Protocol
 from ssh import SSH
 from telnet import Telnet
 from telnet import TelnetConsole
-from functools import partial
 
 protocol2object = defaultdict(
     Protocol, {

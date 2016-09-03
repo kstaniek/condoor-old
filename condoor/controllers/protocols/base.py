@@ -27,8 +27,8 @@
 # =============================================================================
 
 import re
-import pexpect
 import time
+import pexpect
 
 from ...exceptions import \
     ConnectionAuthenticationError, \
@@ -262,10 +262,7 @@ class Protocol(object):
     @action
     def try_detect_prompt(self, ctx):
         ctx.finished = True
-        if self.detect_prompt():
-            return True
-        else:
-            return False
+        return self.detect_prompt()
 
     @action
     def authentication_error(self, ctx):
@@ -298,3 +295,8 @@ class Protocol(object):
     def send_q(self, ctx):
         ctx.ctrl.send("q")
         return True
+
+    def _dbg(self, level, msg):
+        self.logger.log(
+            level, "[{}]: [Protocol]: {}".format(self.ctrl.hostname, msg)
+        )

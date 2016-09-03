@@ -86,7 +86,7 @@ def is_reachable(host, port=23):
     except socket.gaierror:
         return False
 
-    for family, socktype, proto, cannonname, sockaddr in addresses:
+    for family, _, _, _, sockaddr in addresses:
         sock = socket.socket(family, socket.SOCK_STREAM)
         sock.settimeout(5)
         try:

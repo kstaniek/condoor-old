@@ -29,12 +29,12 @@
 
 import logging
 import re
+import pexpect
 
 import generic
 from ..exceptions import ConnectionError, ConnectionAuthenticationError
 
 from ..controllers.fsm import FSM, action
-import pexpect
 
 
 _logger = logging.getLogger(__name__)
