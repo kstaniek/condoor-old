@@ -430,7 +430,7 @@ class Connection(object):
     def _unexpected_prompt(self, ctx):
         prompt = self.ctrl.after
         ctx.msg = "Received the jump host prompt: '{}'".format(prompt)
-        self.ctrl.last_hop = self.ctrl.detected_prompts.index(prompt)
+        self.ctrl.last_hop = self.detected_prompts.index(prompt)
         self.ctrl.connected = False
         return False
 
