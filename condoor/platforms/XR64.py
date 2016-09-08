@@ -81,7 +81,7 @@ class Connection(generic.Connection):
     def boot(self):
         pass
 
-    def reload(self, rommon_boot_command="boot", reload_timeout=300, os="XR"):
+    def reload(self, rommon_boot_command="boot", reload_timeout=300):
         """
         RP/0/RSP0/CPU0:ASR9K-PE4#reload
         Tue Nov 10 14:43:11.488 UTC

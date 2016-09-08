@@ -209,6 +209,6 @@ class Controller(object):
 
     def _clear_detected_prompts(self):
         self.detected_prompts = []
-        for i in xrange(len(self.hosts) + 1):
+        for _ in xrange(len(self.hosts) + 1):
             self.detected_prompts.append(None)
         self.detected_prompts[0] = "FaKePrOmPt"
