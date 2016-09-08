@@ -43,7 +43,7 @@ from ..patterns import YPatternManager
 _PROMPT_IOSXR = re.compile('\w+/\w+/\w+/\w+:.+#')
 _PROMPT_SHELL = re.compile('\$\s*|>\s*')
 
-_PROMPT_XML = 'XML> '
+#_PROMPT_XML = 'XML> '
 _INVALID_INPUT = "Invalid input detected"
 _INCOMPLETE_COMMAND = "Incomplete command."
 _CONNECTION_CLOSED = "Connection closed"
@@ -192,7 +192,7 @@ class Connection(object):
         else:
             raise ConnectionError("Device not connected", host=self.hostname)
 
-    def send_xml(self, command):
+    def send_xml(self, command, timeout=60):
         """
         Handle error i.e.
         ERROR: 0x24319600 'XML-TTY' detected the 'informational' condition
@@ -200,14 +200,11 @@ class Connection(object):
         Check that the configuration 'xml agent tty' has been committed.'
         """
         self._debug("Starting XML TTY Agent")
-        result = self.send("xml", wait_for_string=_PROMPT_XML)
-        if result != '':
-            return result
+        result = self.send("xml")
         self._info("XML TTY Agent started")
 
-        result = self.send(command, wait_for_string=_PROMPT_XML)
+        result = self.send(command, timeout=timeout)
         self.ctrl.sendcontrol('c')
-        self.send()
         return result
 
     def netconf(self, command):
@@ -219,8 +216,6 @@ class Connection(object):
         """
         self._debug("Starting XML TTY Agent")
         result = self.send("netconf", wait_for_string=']]>]]>')
-        # if result != '':
-        #    return result
         self._info("XML TTY Agent started")
 
         self.ctrl.send(command)
@@ -476,7 +471,7 @@ class Connection(object):
         # add detected prompts chain
         events += self.compiled_prompts[:-1]  # without target prompt
 
-        self._debug("Waiting for prompt")
+        self._debug("Waiting for prompt: {}".format(self.compiled_prompts[-1].pattern))
 
         transitions = [
             (self.syntax_error_re, [0], -1, CommandSyntaxError("Command unknown", self.hostname), 0),

@@ -75,7 +75,7 @@ os_names = {
 }
 
 
-@delegate("_driver", ("reload", "send", "enable", "run_fsm"))
+@delegate("_driver", ("reload", "send", "enable", "run_fsm", "send_xml"))
 class Connection(object):
     """This is the main class interface for Condoor. Use this class to create
     a connection session, discover and control the remote device."""
