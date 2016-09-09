@@ -105,17 +105,6 @@ class XRHandler(TelnetHandler):
         return action_name
 
     def authentication_ok(self):
-        for _ in range(3):
-            self.writeline("\nUser Access Verification\n")
-            result = TelnetHandler.authentication_ok(self)
-            if result:
-                break
-        else:
-            self.writeresponse("\n% Authentication failed")
-
-        return result
-
-    def authentication_ok(self):
         '''Checks the authentication and sets the username of the currently connected terminal.  Returns True or False'''
         username = None
         password = None
