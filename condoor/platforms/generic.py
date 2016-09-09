@@ -30,6 +30,7 @@
 
 import re
 from threading import Lock
+
 import pexpect
 
 from ..exceptions import \
@@ -38,18 +39,7 @@ from ..exceptions import \
     CommandTimeoutError
 
 from ..controllers.fsm import FSM, action
-from ..patterns import YPatternManager
-
-_PROMPT_IOSXR = re.compile('\w+/\w+/\w+/\w+:.+#')
-_PROMPT_SHELL = re.compile('\$\s*|>\s*')
-
-#_PROMPT_XML = 'XML> '
-_INVALID_INPUT = "Invalid input detected"
-_INCOMPLETE_COMMAND = "Incomplete command."
-_CONNECTION_CLOSED = "Connection closed"
-
-
-os_types = ['XR', 'CALVADOS', 'ROMMON', 'IOS', 'NX-OS']
+from condoor.patterns import YPatternManager
 
 
 class Connection(object):

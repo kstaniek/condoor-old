@@ -48,19 +48,6 @@ class Connection(generic.Connection):
         self.send('terminal len 0')
         self.send('terminal width 0')
 
-    # def determine_hostname(self, prompt):
-    #     """
-    #     RP/0/RP0/CPU0:Deploy#
-    #     RP/0/RP0/CPU0:Deploy(config)#
-    #     """
-    #     try:
-    #         self.hostname = prompt.split(":")[-1][:-1].split('(')[0]
-    #         self._debug("Hostname detected: {}".format(self.hostname))
-    #         if self.ctrl:
-    #             self.ctrl.hostname = self.hostname
-    #     except:
-    #         self._warning("Unable to extract hostname from prompt: {}".format(prompt))
-
     def boot(self):
         pass
 

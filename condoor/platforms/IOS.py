@@ -27,7 +27,6 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-import logging
 import re
 import pexpect
 
@@ -35,9 +34,6 @@ import generic
 from ..exceptions import ConnectionError, ConnectionAuthenticationError
 
 from ..controllers.fsm import FSM, action
-
-
-_logger = logging.getLogger(__name__)
 
 
 class Connection(generic.Connection):

@@ -26,11 +26,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-import logging
-
 import generic
-
-_logger = logging.getLogger(__name__)
 
 
 class Connection(generic.Connection):
