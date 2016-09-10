@@ -53,11 +53,11 @@ class Telnet(Protocol):
             self._spawn_session(command)
 
     def connect(self):
-        #              0            1                    2                      3
+        #              0            1                              2                      3
         events = [ESCAPE_CHAR, self.press_return_pattern, self.standby_pattern, self.username_pattern,
                   #            4                   5                  6                     7
                   self.password_pattern, self.more_pattern, self.prompt_pattern, self.rommon_pattern,
-                  #       8                 9              10             11
+                  #       8                              9              10
                   self.unable_to_connect_pattern, pexpect.TIMEOUT, PASSWORD_OK]
 
         transitions = [
@@ -73,7 +73,7 @@ class Telnet(Protocol):
             # (prompt, [0, 1, 5], 6, self.send_new_line, 10),
             (self.prompt_pattern, [0, 1, 5], 0, None, 10),
             (self.prompt_pattern, [6, 8, 5], -1, self.save_pattern, 0),
-            (self.rommon_pattern, [0, 1], -1, self.save_pattern, 0),
+            (self.rommon_pattern, [0, 1, 5], -1, self.save_pattern, 0),
             (self.unable_to_connect_pattern, [0, 1], -1, self.unable_to_connect, 0),
             (pexpect.TIMEOUT, [0, 1], 5, self.send_new_line, 10),
             (pexpect.TIMEOUT, [5], -1, ConnectionTimeoutError("Connection timeout", self.hostname), 0)
@@ -147,7 +147,7 @@ class TelnetConsole(Telnet):
             # (prompt, [0, 1, 5], 6, self.send_new_line, 10),
             (self.prompt_pattern, [0, 1, 5], 0, None, 10),
             (self.prompt_pattern, [6, 8, 5], -1, self.save_pattern, 0),
-            (self.rommon_pattern, [0, 1], -1, self.save_pattern, 0),
+            (self.rommon_pattern, [0, 1, 5], -1, self.save_pattern, 0),
             (self.unable_to_connect_pattern, [0, 1], -1, self.unable_to_connect, 0),
             (pexpect.TIMEOUT, [0, 1], 5, self.send_new_line, 10),
             (pexpect.TIMEOUT, [5], -1, ConnectionTimeoutError("Connection timeout", self.hostname), 0)

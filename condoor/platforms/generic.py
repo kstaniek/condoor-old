@@ -64,6 +64,7 @@ class Connection(object):
         self.pattern_manager = YPatternManager()
         self.is_console = is_console
         self.prompt = self.pattern_manager.get_pattern('generic', 'prompt')
+        self.is_rommon = False
 
         for _ in xrange(len(self.hosts) + 1):
             self.compiled_prompts.append(None)
@@ -105,6 +106,9 @@ class Connection(object):
 
         if self.connected:
             self._info("Connected to {}".format(self.__repr__()))
+            self._detect_rommon(self.ctrl.detected_target_prompt)
+            if self.is_rommon:
+                raise ConnectionError("Device in rommon", self.hostname)
             self._compile_prompts()
             self.prepare_prompt()
             self.enable()
@@ -327,6 +331,12 @@ class Connection(object):
         self.compiled_prompts[-1] = prompt_re
         self.prompt = self.ctrl.detected_target_prompt
         self._debug("Dynamic prompt: '{}'".format(prompt_re.pattern))
+
+    def _detect_rommon(self, prompt):
+        result = re.search(self.rommon_re, prompt)
+        if result:
+            self.is_rommon = True
+            self._debug('Rommon detected')
 
     def _compile_prompts(self):
         self.compiled_prompts = [re.compile(re.escape(prompt)) if prompt else None for prompt in self.detected_prompts]

@@ -133,6 +133,8 @@ class Controller(object):
                                         connected = False
                                 else:
                                     detect_prompt = False
+                            else:
+                                connected = False
                         else:
                             connected = False
                     except ConnectionTimeoutError as e:
