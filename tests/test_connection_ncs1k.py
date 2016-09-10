@@ -27,15 +27,14 @@
 # =============================================================================
 
 
+import os
+
 from unittest import TestCase
 
 from xrmock.xrmock import TelnetServer, XRHandler
 from threading import Thread
 
 import condoor
-import sys
-
-import traceback
 
 
 class NCS1KHandler(XRHandler):
@@ -74,7 +73,6 @@ class TestNCS1KConnection(TestCase):
 
         self.server_thread.join()
 
-
     def test_NCS1K_1_discovery(self):
 
         urls = ["telnet://admin:admin@127.0.0.1:10023"]
@@ -97,7 +95,6 @@ class TestNCS1KConnection(TestCase):
         self.assertEqual(conn.prompt, "RP/0/RP0/CPU0:ios#", "Wrong Prompt: {}".format(conn.prompt))
         conn.disconnect()
 
-
     def test_NCS1K_2_connection_refused(self):
         urls = ["telnet://admin:admin@127.0.0.1:10024"]
         self.conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=0)
@@ -109,4 +106,3 @@ class TestNCS1KConnection(TestCase):
         self.conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=0)
         with self.assertRaises(condoor.ConnectionError):
             self.conn.discovery(self.logfile_condoor)
-

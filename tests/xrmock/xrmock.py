@@ -31,8 +31,6 @@
 from telnetsrv.threaded import TelnetHandler, command
 import SocketServer
 import os
-import threading
-import sys
 
 
 class TelnetServer(SocketServer.TCPServer):

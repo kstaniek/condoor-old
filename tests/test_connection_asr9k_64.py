@@ -32,7 +32,6 @@ from xrmock.xrmock import TelnetServer, XRHandler
 from threading import Thread
 
 import condoor
-import sys
 import os
 
 
@@ -92,7 +91,7 @@ class TestASR9K64Connection(TestCase):
 
     def test_ASR9K64_3_connection_refused(self):
         urls = ["telnet://admin:admin@127.0.0.1:10024"]
-        self.conn = condoor.Connection("host", urls, log_session=self.log_session,  log_level=self.log_level)
+        self.conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)
         with self.assertRaises(condoor.ConnectionError):
             self.conn.connect(self.logfile_condoor)
 

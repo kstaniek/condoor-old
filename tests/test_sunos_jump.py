@@ -26,13 +26,13 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
+import os
 from unittest import TestCase
 
 from xrmock.xrmock import TelnetServer, TelnetHandler, command
 from threading import Thread
 
 import condoor
-import sys
 
 
 class SunHandler(TelnetHandler):
