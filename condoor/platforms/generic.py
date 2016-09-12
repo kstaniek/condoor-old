@@ -333,10 +333,14 @@ class Connection(object):
         self._debug("Dynamic prompt: '{}'".format(prompt_re.pattern))
 
     def _detect_rommon(self, prompt):
-        result = re.search(self.rommon_re, prompt)
-        if result:
-            self.is_rommon = True
-            self._debug('Rommon detected')
+        if prompt:
+            result = re.search(self.rommon_re, prompt)
+            if result:
+                self.is_rommon = True
+                self._debug('Rommon detected')
+                return
+
+        self.is_rommon = False
 
     def _compile_prompts(self):
         self.compiled_prompts = [re.compile(re.escape(prompt)) if prompt else None for prompt in self.detected_prompts]

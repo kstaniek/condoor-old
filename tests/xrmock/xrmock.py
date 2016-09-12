@@ -72,6 +72,11 @@ class XRHandler(TelnetHandler):
             if action:
                 action()
 
+    @command('wrongcommand')
+    def admin(self, params):
+        self.writeresponse("""                    ^
+% Invalid input detected at '^' marker.""")
+
     @command('terminal')
     def terminal(self, params):
         """

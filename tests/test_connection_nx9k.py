@@ -36,7 +36,7 @@ import os
 
 
 class NX9KHandler(NXOSHandler):
-    platform = "NX9K"
+    platform = "N9K"
 
 
 class TestNX9KConnection(TestCase):
@@ -70,32 +70,35 @@ class TestNX9KConnection(TestCase):
 
         self.assertEqual(conn._discovered, True, "Not discovered properly")
         self.assertEqual(conn.hostname, "switch", "Wrong Hostname: {}".format(conn.hostname))
-        # self.assertEqual(conn.family, "ASR9K", "Wrong Family: {}".format(conn.family))
-        # self.assertEqual(conn.platform, "ASR-9904", "Wrong Platform: {}".format(conn.platform))
-        # self.assertEqual(conn.os_type, "XR", "Wrong OS Type: {}".format(conn.os_type))
-        # self.assertEqual(conn.os_version, "5.3.3", "Wrong Version: {}".format(conn.os_version))
-        # self.assertEqual(conn.udi['name'], "chassis ASR-9904-AC", "Wrong Name: {}".format(conn.udi['name']))
-        # self.assertEqual(conn.udi['description'], "ASR 9904 2 Line Card Slot Chassis with V2 AC PEM",
-        #                  "Wrong Description: {}".format(conn.udi['description']))
-        # self.assertEqual(conn.udi['pid'], "ASR-9904-AC", "Wrong PID: {}".format(conn.udi['pid']))
-        # self.assertEqual(conn.udi['vid'], "V01", "Wrong VID: {}".format(conn.udi['vid']))
-        # self.assertEqual(conn.udi['sn'], "FOX1830GT5W", "Wrong S/N: {}".format(conn.udi['sn']))
-        # self.assertEqual(conn.prompt, "RP/0/RP0/CPU0:ios#", "Wrong Prompt: {}".format(conn.prompt))
+        self.assertEqual(conn.family, "N9K", "Wrong Family: {}".format(conn.family))
+        self.assertEqual(conn.platform, "Nexus9000", "Wrong Platform: {}".format(conn.platform))
+        self.assertEqual(conn.os_type, "NX-OS", "Wrong OS Type: {}".format(conn.os_type))
+        self.assertEqual(conn.os_version, "7.0(3)IED5(1)", "Wrong Version: {}".format(conn.os_version))
+        self.assertEqual(conn.udi['name'], "Chassis", "Wrong Name: {}".format(conn.udi['name']))
+        self.assertEqual(conn.udi['description'], "Nexus9000 C9508 (8 Slot) Chassis",
+                         "Wrong Description: {}".format(conn.udi['description']))
+        self.assertEqual(conn.udi['pid'], "N9K-C9508", "Wrong PID: {}".format(conn.udi['pid']))
+        self.assertEqual(conn.udi['vid'], "V01", "Wrong VID: {}".format(conn.udi['vid']))
+        self.assertEqual(conn.udi['sn'], "FGE18210BQR", "Wrong S/N: {}".format(conn.udi['sn']))
+        self.assertEqual(conn.prompt, "switch#", "Wrong Prompt: {}".format(conn.prompt))
+        self.assertEqual(conn.is_console, True, "Console connection not detected")
+        with self.assertRaises(condoor.CommandSyntaxError):
+            conn.send("wrongcommand")
 
         conn.disconnect()
 
-    # def test_ASR9K_2_connection_wrong_user(self):
-    #     urls = ["telnet://root:admin@127.0.0.1:10023"]
-    #     self.conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)
-    #
-    #     with self.assertRaises(condoor.ConnectionError):
-    #         self.conn.connect(self.logfile_condoor)
-    #
-    # def test_ASR9K_3_connection_refused(self):
-    #     urls = ["telnet://admin:admin@127.0.0.1:10024"]
-    #     self.conn = condoor.Connection("host", urls, log_session=self.log_session,  log_level=self.log_level)
-    #     with self.assertRaises(condoor.ConnectionError):
-    #         self.conn.connect(self.logfile_condoor)
+    def test_ASR9K_2_connection_wrong_user(self):
+        urls = ["telnet://root:admin@127.0.0.1:10024"]
+        self.conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)
+
+        with self.assertRaises(condoor.ConnectionAuthenticationError):
+            self.conn.connect(self.logfile_condoor)
+
+    def test_ASR9K_3_connection_refused(self):
+        urls = ["telnet://admin:admin@127.0.0.1:10023"]
+        self.conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)
+        with self.assertRaises(condoor.ConnectionError):
+            self.conn.connect(self.logfile_condoor)
 
 
 if __name__ == '__main__':

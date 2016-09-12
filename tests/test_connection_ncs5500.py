@@ -81,12 +81,16 @@ class TestNCS5500Connection(TestCase):
         self.assertEqual(conn.udi['vid'], "V01", "Wrong VID: {}".format(conn.udi['vid']))
         self.assertEqual(conn.udi['sn'], "FGE194714QX", "Wrong S/N: {}".format(conn.udi['sn']))
         self.assertEqual(conn.prompt, "RP/0/RP0/CPU0:ios#", "Wrong Prompt: {}".format(conn.prompt))
+        with self.assertRaises(condoor.CommandSyntaxError):
+            conn.send("wrongcommand")
+
+        conn.disconnect()
 
     def test_NCS5500_2_connection_wrong_user(self):
         urls = ["telnet://root:admin@127.0.0.1:10023"]
         self.conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)
 
-        with self.assertRaises(condoor.ConnectionError):
+        with self.assertRaises(condoor.ConnectionAuthenticationError):
             self.conn.connect(self.logfile_condoor)
 
     def test_NCS5500_3_connection_refused(self):

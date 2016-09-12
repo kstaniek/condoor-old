@@ -57,7 +57,6 @@ http://www.gnu.org/licenses/old-licenses/library.txt.
 switch#
 """
 
-import threading
 from telnetsrv.threaded import TelnetHandler, command
 import SocketServer
 import os
@@ -100,7 +99,7 @@ http://www.gnu.org/licenses/old-licenses/library.txt."""
     PROMPT_USER = "switch login: "
     PROMPT_PASS = "Password: "
 
-    @command(['show', 'admin'])
+    @command(['show'])
     def cmd(self, params):
         params.insert(0, self.input.cmd)
         command_line = "_".join(params)
@@ -119,6 +118,11 @@ http://www.gnu.org/licenses/old-licenses/library.txt."""
             action = getattr(self, action_name, None)
             if action:
                 action()
+
+    @command('wrongcommand')
+    def admin(self, params):
+        self.writeresponse("""         ^
+% Invalid command at '^' marker.""")
 
     @command('terminal')
     def terminal(self, params):
@@ -190,14 +194,14 @@ http://www.gnu.org/licenses/old-licenses/library.txt."""
             self.writeresponse("\n% Authentication failed")
             return False
 
-"""
-Usage example in test cases
-"""
-if __name__ == '__main__':
-    server = TelnetServer(("127.0.0.1", 10024), NXOSHandler)
-    server_thread = threading.Thread(target=server.serve_forever)
-    server_thread.daemon = True
-    server_thread.start()
-    raw_input("Press ENTER to stop")
-    server.shutdown()
-    server.server_close()
+# """
+# Usage example in test cases
+# """
+# if __name__ == '__main__':
+#     server = TelnetServer(("127.0.0.1", 10024), NXOSHandler)
+#     server_thread = threading.Thread(target=server.serve_forever)
+#     server_thread.daemon = True
+#     server_thread.start()
+#     raw_input("Press ENTER to stop")
+#     server.shutdown()
+#     server.server_close()

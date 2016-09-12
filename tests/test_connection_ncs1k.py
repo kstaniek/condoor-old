@@ -57,6 +57,7 @@ class TestNCS1KConnection(TestCase):
         self.server_thread = Thread(target=self.server.serve_forever)
         self.server_thread.setDaemon(True)
         self.server_thread.start()
+
         self.log_session = False
         self.logfile_condoor = None  # sys.stderr
         self.log_level = 0
@@ -78,7 +79,7 @@ class TestNCS1KConnection(TestCase):
         urls = ["telnet://admin:admin@127.0.0.1:10023"]
         conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)
         self.conn = conn
-        conn.discovery(self.logfile_condoor)
+        conn.connect(self.logfile_condoor)
 
         self.assertEqual(conn._discovered, True, "Not discovered properly")
         self.assertEqual(conn.hostname, "ios", "Wrong Hostname: {}".format(conn.hostname))
@@ -93,6 +94,10 @@ class TestNCS1KConnection(TestCase):
         self.assertEqual(conn.udi['vid'], "V01", "Wrong VID: {}".format(conn.udi['vid']))
         self.assertEqual(conn.udi['sn'], "CHANGE-ME-", "Wrong S/N: {}".format(conn.udi['sn']))
         self.assertEqual(conn.prompt, "RP/0/RP0/CPU0:ios#", "Wrong Prompt: {}".format(conn.prompt))
+
+        with self.assertRaises(condoor.CommandSyntaxError):
+            conn.send("wrongcommand")
+
         conn.disconnect()
 
     def test_NCS1K_2_connection_refused(self):

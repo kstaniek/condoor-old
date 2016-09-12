@@ -360,10 +360,12 @@ class Connection(object):
         self._family = _family
 
     def _update_udi(self):
-
+        # FIXME: Move to platform driver
         if self._os_type in ['XR', 'eXR']:
             cmd = 'admin show inventory chassis'
-        elif self._os_type in ['IOS', 'XE', 'NX-OS']:
+        elif self._os_type in ['NX-OS']:
+            cmd = 'show inventory chassis'
+        elif self._os_type in ['IOS', 'XE']:
             cmd = 'show inventory'
         else:
             return self._udi  # do not detect

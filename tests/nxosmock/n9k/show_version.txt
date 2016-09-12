@@ -1,0 +1,47 @@
+Cisco Nexus Operating System (NX-OS) Software
+TAC support: http://www.cisco.com/tac
+Copyright (C) 2002-2016, Cisco and/or its affiliates.
+All rights reserved.
+The copyrights to certain works contained in this software are
+owned by other third parties and used and distributed under their own
+licenses, such as open source.  This software is provided "as is," and unless
+otherwise stated, there is no warranty, express or implied, including but not
+limited to warranties of merchantability and fitness for a particular purpose.
+Certain components of this software are licensed under
+the GNU General Public License (GPL) version 2.0 or
+GNU General Public License (GPL) version 3.0  or the GNU
+Lesser General Public License (LGPL) Version 2.1 or
+Lesser General Public License (LGPL) Version 2.0.
+A copy of each such license is available at
+http://www.opensource.org/licenses/gpl-2.0.php and
+http://opensource.org/licenses/gpl-3.0.html and
+http://www.opensource.org/licenses/lgpl-2.1.php and
+http://www.gnu.org/licenses/old-licenses/library.txt.
+
+Software
+  BIOS: version 08.18
+  NXOS: version 7.0(3)I5(1) [build 7.0(3)I5(0.88)]
+  BIOS compile time:  08/11/2015
+  NXOS image file is: bootflash:///nxos.7.0.3.I5.0.88.bin
+  NXOS compile time:  8/26/2016 2:00:00 [08/27/2016 18:23:02]
+
+
+Hardware
+  cisco Nexus9000 C9508 (8 Slot) Chassis ("Supervisor Module")
+  Intel(R) Xeon(R) CPU E5-2403 0 @ 1.80GHz with 16401276 kB of memory.
+  Processor Board ID SAL190387RG
+
+  Device name: switch
+  bootflash:   51496280 kB
+Kernel uptime is 3 day(s), 6 hour(s), 10 minute(s), 45 second(s)
+
+Last reset at 113795 usecs after  Fri Sep  9 14:53:23 2016
+
+  Reason: Reset Requested by CLI command reload
+  System version: 7.0(3)IED5(1)
+  Service:
+
+plugin
+  Core Plugin, Ethernet Plugin
+
+Active Package(s):
