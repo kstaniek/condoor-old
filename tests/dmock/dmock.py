@@ -149,9 +149,9 @@ class DeviceHandler(TelnetHandler):
                 # No authentication desired
                 self.username = None
                 return True
-        else:
-            self.writeresponse(self.AUTH_FAILED_MESSAGE)
-            return False
+
+        self.writeresponse(self.AUTH_FAILED_MESSAGE)
+        return False
 
 
 class XRHandler(DeviceHandler):
@@ -290,9 +290,8 @@ class SunHandler(DeviceHandler):
                 # No authentication desired
                 self.username = None
                 return True
-        else:
-            self.writeresponse("Login incorrect")
-            return False
+        self.writeresponse("Login incorrect")
+        return False
 
     @command('telnet')
     def telnet(self, params):
