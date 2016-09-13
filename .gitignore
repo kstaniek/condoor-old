@@ -57,3 +57,5 @@ sandbox
 
 .DS_Store
 device_db.txt
+
+session.log

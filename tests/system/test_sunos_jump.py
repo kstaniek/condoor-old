@@ -29,67 +29,10 @@
 import os
 from unittest import TestCase
 
-from xrmock.xrmock import TelnetServer, TelnetHandler, command
+from tests.dmock.dmock import TelnetServer, SunHandler
 from threading import Thread
 
 import condoor
-
-
-class SunHandler(TelnetHandler):
-    PROMPT = "TEST "  # Intentionally wierd prompt
-    WELCOME = "Last login: Wed Jul 27 00:44:30 from localhost"
-
-    authNeedUser = True
-    authNeedPass = True
-    response_dict = {}
-    action_dict = {}
-    username = "admin"
-    password = "admin"
-    PROMPT_USER = "login:"
-    PROMPT_PASS = "This is your AD password:"
-
-    def authCallback(self, username, password):
-        if password != self.password:
-            raise Exception()
-        return True
-
-    def authentication_ok(self):
-        username = None
-        password = None
-        for _ in range(1):
-            if self.authCallback:
-
-                if self.authNeedPass:
-                    password = self.readline(echo=False, prompt=self.PROMPT_PASS, use_history=False)
-                    if password == 'QUIT':
-                        self.RUNSHELL = False
-                        return True
-
-                    if self.DOECHO:
-                        self.write("\n")
-                try:
-                    self.authCallback(None, password)
-                except:
-                    self.username = None
-                    continue
-
-                else:
-                    # Successful authentication
-                    self.username = username
-                    return True
-            else:
-                # No authentication desired
-                self.username = None
-                return True
-        else:
-            self.writeresponse("Login incorrect")
-            return False
-
-    @command('telnet')
-    def telnet(self, params):
-        self.writeresponse("""Trying host1...
-Connected to host1.
-Escape character is '^]'.""")
 
 
 class TestSunConnection(TestCase):
@@ -98,13 +41,22 @@ class TestSunConnection(TestCase):
         self.server_thread = Thread(target=self.server.serve_forever)
         self.server_thread.daemon = True
         self.server_thread.start()
-        self.log_session = False
-        self.logfile_condoor = None  # sys.stderr
-        self.log_level = 0
+
+        debug = os.getenv("TEST_DEBUG", None)
+        if debug:
+            self.log_session = True
+            import sys
+            self.logfile_condoor = sys.stderr
+            self.log_level = 10
+
+        else:
+            self.log_session = False
+            self.logfile_condoor = None  # sys.stderr
+            self.log_level = 0
 
         try:
             os.remove('/tmp/condoor.shelve')
-        except:
+        except OSError:
             pass
 
     def tearDown(self):
