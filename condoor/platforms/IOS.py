@@ -27,6 +27,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
+from functools import partial
 import logging
 import re
 
@@ -96,7 +97,22 @@ class Connection(generic.Connection):
         [OK]
         Proceed with reload? [confirm]
         """
-        pass
+        RELOAD_CMD = "reload"
+        SAVE_CONFIG = re.compile(re.escape("System configuration has been modified. Save? [yes/no]: "))
+        PROCEED = re.compile(re.escape("Proceed with reload? [confirm]"))
+
+        response = "yes" if save_config else "no"
+
+        events = [SAVE_CONFIG, PROCEED, pexpect.TIMEOUT, pexpect.EOF]
+
+        transitions = [
+            (SAVE_CONFIG, [0], 1, partial(self._send_line, response), 60),
+            (PROCEED, [0, 1], -1, self._send_lf, 10),
+            # if timeout try to send the reload command again
+            (pexpect.TIMEOUT, [0], 0, partial(self._send_line, RELOAD_CMD), 10),
+            (pexpect.EOF, [0, 1], -1, None, 0)
+        ]
+        return self.run_fsm("IOS-RELOAD", RELOAD_CMD, events, transitions, timeout=10, max_transitions=5)
 
     def enable(self, enable_password=None):
         ENABLE = "enable"
@@ -128,4 +144,9 @@ class Connection(generic.Connection):
         ctx.ctrl.setecho(False)
         ctx.ctrl.sendline(self._get_enable_password())
         ctx.ctrl.setecho(True)
+        return True
+
+    @action
+    def _send_line(self, text, ctx):
+        ctx.ctrl.sendline(text)
         return True
