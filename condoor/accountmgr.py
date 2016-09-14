@@ -93,7 +93,7 @@ class AccountManager(object):
 
         try:
             password = keyring.get_password(make_realm(section), username)
-        except:
+        except Exception:
             password = None
 
         if password is None and interact:
