@@ -192,18 +192,18 @@ class FSM(object):
 
                 if key in self.transition_table:
                     transition = self.transition_table[key]
-                    next_state, action, next_timeout = transition
+                    next_state, action_instance, next_timeout = transition
                     self._dbg(10, "E={},S={},T={},RT={:.2f}".format(ctx.event, ctx.state, timeout, finish_time))
-                    if callable(action):
-                        if not action(ctx):
+                    if callable(action_instance):
+                        if not action_instance(ctx):
                             self._dbg(50, "Error: {}".format(ctx.msg))
                             return False
-                    elif isinstance(action, Exception):
-                        raise action
-                    elif action is None:
+                    elif isinstance(action_instance, Exception):
+                        raise action_instance
+                    elif action_instance is None:
                         self._dbg(10, "No action")
                     else:
-                        self._dbg(40, "FSM Action is not callable: {}".format(action.__name__))
+                        self._dbg(40, "FSM Action is not callable: {}".format(action_instance.__name__))
                         raise RuntimeWarning("FSM Action is not callable")
 
                     if next_timeout != 0:  # no change if set to 0
