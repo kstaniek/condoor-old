@@ -281,27 +281,21 @@ class Connection(object):
     def _detect_console(self):
         # FIXME: Use patterns
         try:
-            output = self._driver.send("show users")
+            output = self._driver.send("show users", timeout=60)
         except CommandError:
             self.logger.debug("Command 'show users' not suported")
             return False
 
         for line in output.split('\n'):
             if '*' in line:
-                break
-        else:
-            self.logger.debug("Connection port unknown")
-            return False
-
-        if 'vty' in line:
-            self.logger.debug("Detected connection to vty")
-            return False
-        elif 'con' in line or 'tty' in line or 'aux' in line:  # tty for NX-OS
-            self.logger.debug("Detected connection to console")
-            return True
+                if 'vty' in line:
+                    self.logger.debug("Detected connection to vty")
+                    return False
+                elif 'con' in line or 'tty' in line or 'aux' in line:  # tty for NX-OS
+                    self.logger.debug("Detected connection to console")
+                    return True
 
         self.logger.debug("Connection port unknown")
-        return False
 
     def _update_device_info(self):
         try:
