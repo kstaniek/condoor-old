@@ -13,6 +13,7 @@ generic:
     - XR
     - XR64
     - NX-OS
+    - IOS
   syntax_error:
     - XR
     - XR64
@@ -86,9 +87,11 @@ IOS:
   rommon: 'rommon \d+ >|rommon>'
   password: 'Password: '
   username: 'Username: '
+  standby: 'Standby console disabled'
   syntax_error:
     pattern: '% Bad IP address or host name% Unknown command or computer name, or unable to find computer address|% Invalid input detected at ''\^'' marker\.|% Type "show \?" for a list of subcommands|% Ambiguous command:|% Incomplete command\.'
     description: 'Command syntax error'
+
 
 NX-OS:
   prompt: '^(?P<hostname>.*?)(\([^()]*\))?#'
