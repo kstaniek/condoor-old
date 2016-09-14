@@ -105,7 +105,7 @@ class AccountManager(object):
     def set_password(self, realm, username, password):
         try:
             keyring.set_password(realm, username, password)
-        except:
+        except Exception:
             pass
 
     def get_login(self, realm):
