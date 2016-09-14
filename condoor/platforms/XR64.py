@@ -26,16 +26,13 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
-
-import re
 from functools import partial
-
+import re
 import pexpect
-
 import generic
-from condoor.actions import a_send_line
-from ..controllers.fsm import FSM, action
-from ..exceptions import ConnectionError, ConnectionAuthenticationError
+from condoor.actions import a_send_line, a_send, a_return_and_reconnect, a_reload_na
+from condoor.controllers.fsm import FSM
+from condoor.exceptions import ConnectionError, ConnectionAuthenticationError
 
 
 class Connection(generic.Connection):
@@ -71,8 +68,6 @@ class Connection(generic.Connection):
         [Done]
         """
 
-        self.rommon_boot_command = rommon_boot_command
-
         ADMIN = "admin"
         RELOAD = "hw-module location all reload"
         CONFIRM_RELOAD = re.compile(re.escape("Reload hardware module ? [no,yes]"))
@@ -92,11 +87,11 @@ class Connection(generic.Connection):
         transitions_shared = [
             # here must be authentication
             (CONSOLE, [3, 4], 5, None, 600),
-            (self.press_return_re, [5], 6, self._send_lf, 300),
+            (self.press_return_re, [5], 6, partial(a_send, "\r"), 300),
             # if asks for username/password reconfiguration, go to success state and let plugin handle the rest.
             (RECONFIGURE_USERNAME_PROMPT, [6, 7], -1, None, 0),
             (CONFIGURATION_IN_PROCESS, [6], 7, None, 180),
-            (CONFIGURATION_COMPLETED, [7], -1, self._return_and_authenticate, 0),
+            (CONFIGURATION_COMPLETED, [7], -1, a_return_and_reconnect, 0),
 
             (pexpect.TIMEOUT, [0, 1, 2], -1,
              ConnectionAuthenticationError("Unable to reload", self.hostname), 0),
@@ -116,7 +111,7 @@ class Connection(generic.Connection):
         transitions = [
             # Preparing system for backup. This may take a few minutes especially for large configurations.
             (RELOAD, [0], 1, None, 120),
-            (RELOAD_NA, [1], -1, self._reload_na, 0),
+            (RELOAD_NA, [1], -1, a_reload_na, 0),
             (CONFIRM_RELOAD, [1], 2, partial(a_send_line, "yes"), 120),
             (DONE, [2], 3, None, reload_timeout),
             (STBY_CONSOLE, [3], -1, None, 10)
@@ -124,26 +119,3 @@ class Connection(generic.Connection):
 
         fs = FSM("RELOAD", self.ctrl, events, transitions, timeout=10)
         return fs.run()
-
-    @action
-    def _send_boot(self, ctx):
-        ctx.ctrl.sendline(self.rommon_boot_command)
-        return True
-
-    @action
-    def _authenticate(self, ctx):
-        ctx.ctrl.connect(start_hop=len(ctx.ctrl.hosts) - 1, spawn=False, detect_prompt=False)
-        return True
-
-    @action
-    def _return_and_authenticate(self, ctx):
-        self._send_lf(ctx)
-        ctx.ctrl.connect(start_hop=len(ctx.ctrl.hosts) - 1, spawn=False, detect_prompt=False)
-        return True
-
-    @action
-    def _reload_na(self, ctx):
-        ctx.msg = "Reload to the ROM monitor disallowed from a telnet line. " \
-                  "Set the configuration register boot bits to be non-zero."
-        ctx.failed = True
-        return False

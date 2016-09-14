@@ -61,6 +61,12 @@ def a_authentication_error(ctx):
 
 
 @action
+def a_unable_to_connect(ctx):
+    ctx.msg = "{}{}".format(ctx.ctrl.before, ctx.ctrl.after)
+    return False
+
+
+@action
 def a_reload_na(ctx):
     ctx.msg = "Reload to the ROM monitor disallowed from a telnet line. " \
               "Set the configuration register boot bits to be non-zero."
@@ -106,4 +112,29 @@ def a_expected_prompt(ctx):
 @action
 def a_expected_string_received(ctx):
     ctx.finished = True
+    return True
+
+
+@action
+def a_save_last_pattern(obj, ctx):
+    obj.last_pattern = ctx.pattern
+    return True
+
+
+@action
+def a_send_boot(rommon_boot_command, ctx):
+    ctx.ctrl.sendline(rommon_boot_command)
+    return True
+
+
+@action
+def a_reconnect(ctx):
+    ctx.ctrl.connect(start_hop=len(ctx.ctrl.hosts) - 1, spawn=False, detect_prompt=False)
+    return True
+
+
+@action
+def a_return_and_reconnect(ctx):
+    ctx.ctrl.send("\r")
+    ctx.ctrl.connect(start_hop=len(ctx.ctrl.hosts) - 1, spawn=False, detect_prompt=False)
     return True

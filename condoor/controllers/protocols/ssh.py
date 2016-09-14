@@ -1,5 +1,4 @@
 # =============================================================================
-# ssh
 #
 # Copyright (c)  2016, Cisco Systems
 # All rights reserved.
@@ -31,11 +30,12 @@ from functools import partial
 import pexpect
 
 from base import Protocol
-from ..fsm import FSM, action
-from ...utils import pattern_to_str
-from condoor.actions import a_send_password, a_authentication_error
+from condoor.controllers.fsm import FSM, action
+from condoor.utils import pattern_to_str
+from condoor.actions import a_send_password, a_authentication_error, a_send, a_unable_to_connect, a_save_last_pattern,\
+    a_send_line
 
-from ...exceptions import ConnectionAuthenticationError, ConnectionError, ConnectionTimeoutError
+from condoor.exceptions import ConnectionError, ConnectionTimeoutError
 
 
 MODULUS_TOO_SMALL = "modulus too small"
@@ -72,17 +72,17 @@ class SSH(Protocol):
                   pexpect.TIMEOUT]
 
         transitions = [
-            (self.password_pattern, [0, 1, 4, 5], -1, self.save_pattern, 0),
-            (self.prompt_pattern, [0], -1, self.save_pattern, 0),
+            (self.password_pattern, [0, 1, 4, 5], -1, partial(a_save_last_pattern, self), 0),
+            (self.prompt_pattern, [0], -1, partial(a_save_last_pattern, self), 0),
             #  cover all messages indicating that connection was not set up
-            (self.unable_to_connect_pattern, [0], -1, self.unable_to_connect, 0),
-            (NEWSSHKEY, [0], 1, self.send_yes, 10),
+            (self.unable_to_connect_pattern, [0], -1, a_unable_to_connect, 0),
+            (NEWSSHKEY, [0], 1, partial(a_send_line, "yes"), 10),
             (KNOWN_HOSTS, [0, 1], 0, None, 0),
             (HOST_KEY_FAILED, [0], -1, ConnectionError("Host key failed", self.hostname), 0),
             (MODULUS_TOO_SMALL, [0], 0, self.fallback_to_sshv1, 0),
             (PROTOCOL_DIFFER, [0], 4, self.fallback_to_sshv1, 0),
             (PROTOCOL_DIFFER, [4], -1, ConnectionError("Protocol version differs", self.hostname), 0),
-            (pexpect.TIMEOUT, [0], 5, self.send_new_line, 10),
+            (pexpect.TIMEOUT, [0], 5, partial(a_send, "\r\n"), 10),
             (pexpect.TIMEOUT, [5], -1, ConnectionTimeoutError("Connection timeout", self.hostname), 0)
 
         ]
@@ -95,12 +95,12 @@ class SSH(Protocol):
         events = [self.press_return_pattern, self.password_pattern, self.prompt_pattern, pexpect.TIMEOUT]
 
         transitions = [
-            (self.press_return_pattern, [0, 1], 1, self.send_new_line, 10),
+            (self.press_return_pattern, [0, 1], 1, partial(a_send, "\r\n"), 10),
             (self.password_pattern, [0], 1, partial(a_send_password, self._acquire_password()), 20),
             (self.password_pattern, [1], -1, a_authentication_error, 0),
             (self.prompt_pattern, [0, 1], -1, None, 0),
             (pexpect.TIMEOUT, [1], -1,
-             ConnectionError("Error getting device prompt") if self.ctrl.is_target else self.send_new_line, 0)
+             ConnectionError("Error getting device prompt") if self.ctrl.is_target else partial(a_send, "\r\n"), 0)
         ]
 
         self._dbg(10, "EXPECTED_PROMPT={}".format(pattern_to_str(self.prompt_pattern)))
@@ -115,17 +115,10 @@ class SSH(Protocol):
         self.ctrl.sendline('\x03')
 
     @action
-    def send_yes(self, ctx):
-        ctx.ctrl.sendline("yes")
-        return True
-
-    @action
     def fallback_to_sshv1(self, ctx):
         command = self._get_command(version=1)
         self._spawn_session(command)
         return True
 
     def _dbg(self, level, msg):
-        self.logger.log(
-            level, "[{}]: [SSH]: {}".format(self.ctrl.hostname, msg)
-        )
+        self.logger.log(level, "[{}]: [SSH]: {}".format(self.ctrl.hostname, msg))

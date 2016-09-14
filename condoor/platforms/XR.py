@@ -25,17 +25,13 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
-
-import re
 from functools import partial
-
+import re
 import pexpect
-
 import generic
-from condoor.actions import a_reload_na, a_send, a_send_line, a_connection_closed, a_stays_connected, a_unexpected_prompt,\
-    a_expected_prompt
-from ..controllers.fsm import FSM, action
-from ..exceptions import ConnectionError, ConnectionAuthenticationError, CommandSyntaxError, CommandTimeoutError
+from condoor.actions import a_reload_na, a_send, a_send_line, a_send_boot, a_return_and_reconnect
+from condoor.controllers.fsm import FSM
+from condoor.exceptions import ConnectionError, ConnectionAuthenticationError
 
 
 class Connection(generic.Connection):
@@ -65,8 +61,6 @@ class Connection(generic.Connection):
         [Done]
         """
 
-        self.rommon_boot_command = rommon_boot_command
-
         RELOAD = "admin reload location all"
         PROCEED = re.compile(re.escape("Proceed with reload? [confirm]"))
 
@@ -89,7 +83,7 @@ class Connection(generic.Connection):
             # if asks for username/password reconfiguration, go to success state and let plugin handle the rest.
             (RECONFIGURE_USERNAME_PROMPT, [6, 7], -1, None, 0),
             (CONFIGURATION_IN_PROCESS, [6], 7, None, 180),
-            (CONFIGURATION_COMPLETED, [7], -1, self._return_and_authenticate, 0),
+            (CONFIGURATION_COMPLETED, [7], -1, a_return_and_reconnect, 0),
             (pexpect.TIMEOUT, [0, 1, 2], -1, ConnectionAuthenticationError("Unable to reload", self.hostname), 0),
             (pexpect.EOF, [0, 1, 2, 3, 4, 5], -1, ConnectionError("Device disconnected", self.hostname), 0),
             (pexpect.TIMEOUT, [6], 7, partial(a_send_line, ""), 180),
@@ -107,57 +101,8 @@ class Connection(generic.Connection):
             (RELOAD_NA, [1], -1, a_reload_na, 0),
             (DONE, [1], 2, None, 120),
             (PROCEED, [2], 3, partial(a_send, "\r"), reload_timeout),
-            (self.rommon_re, [0, 3], 4, self._send_boot, 600),
+            (self.rommon_re, [0, 3], 4, partial(a_send_boot, rommon_boot_command), 600),
         ] + transitions_shared
 
         fs = FSM("RELOAD", self.ctrl, events, transitions, timeout=10)
         return fs.run()
-
-    def wait_for_prompt(self, timeout=60):
-        # ASR with IOSXR specific error when cmd is longer than 256 characters
-        _BUFFER_OVERFLOW = re.compile("Error: input buffer overflow")
-
-        #                    0                         1                        2                       3
-        events = [self.syntax_error_re, self.connection_closed_re, self.compiled_prompts[-1], self.press_return_re,
-                  #        4           5                 6                7
-                  self.more_re, _BUFFER_OVERFLOW, pexpect.TIMEOUT, pexpect.EOF]
-
-        # add detected prompts chain
-        events += self.compiled_prompts[:-1]  # without target prompt
-
-        self._debug("Waiting for prompt")
-
-        transitions = [
-            (self.syntax_error_re, [0], -1, CommandSyntaxError("Command unknown", self.hostname), 0),
-            (self.connection_closed_re, [0], 1, a_connection_closed, 10),
-            (pexpect.TIMEOUT, [0], -1, CommandTimeoutError("Timeout waiting for prompt", self.hostname), 0),
-            (pexpect.EOF, [0, 1], -1, ConnectionError("Unexpected device disconnect", self.hostname), 0),
-            (self.more_re, [0], 0, partial(a_send, " "), 10),
-            (self.compiled_prompts[-1], [0, 1], -1, a_expected_prompt, 0),
-            (self.press_return_re, [0], -1, a_stays_connected, 0),
-            (_BUFFER_OVERFLOW, [0], -1, CommandSyntaxError("Command too long", self.hostname), 0)
-        ]
-
-        for prompt in self.compiled_prompts[:-1]:
-            transitions.append((prompt, [0, 1], 0, a_unexpected_prompt, 0))
-
-        sm = FSM("WAIT-4-PROMPT", self.ctrl, events, transitions, timeout=timeout)
-        return sm.run()
-
-    @action
-    def _send_boot(self, ctx):
-        ctx.ctrl.sendline(self.rommon_boot_command)
-        return True
-
-    @action
-    def _authenticate(self, ctx):
-        ctx.ctrl.connect(start_hop=len(ctx.ctrl.hosts) - 1, spawn=False, detect_prompt=False)
-        return True
-
-    @action
-    def _return_and_authenticate(self, ctx):
-        self._send_lf(ctx)
-        ctx.ctrl.connect(start_hop=len(ctx.ctrl.hosts) - 1, spawn=False, detect_prompt=False)
-        return True
-
-

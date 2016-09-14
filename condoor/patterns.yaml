@@ -26,6 +26,9 @@ generic:
   connection_closed:
     pattern: 'Connection closed'
     description: 'Connection closed'
+  buffer_overflow:
+    pattern: 'Error: input buffer overflow'
+    description: 'Command too long'
 
   unable_to_connect:
     pattern: 'nodename nor servname provided, or not known|

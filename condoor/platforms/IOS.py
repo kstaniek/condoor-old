@@ -26,15 +26,13 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
-
-import re
 from functools import partial
-
+import re
 import pexpect
 
 import generic
 from condoor.actions import a_send, a_send_line, a_send_password
-from ..exceptions import ConnectionError, ConnectionAuthenticationError
+from condoor.exceptions import ConnectionError, ConnectionAuthenticationError
 
 
 class Connection(generic.Connection):
@@ -94,7 +92,6 @@ class Connection(generic.Connection):
         return self.run_fsm("IOS-RELOAD", RELOAD_CMD, events, transitions, timeout=10, max_transitions=5)
 
     def enable(self, enable_password=None):
-
         ENABLE_CMD = "enable"
         prompt = self.compiled_prompts[-1]
         enable_password = enable_password if enable_password else self._get_enable_password()

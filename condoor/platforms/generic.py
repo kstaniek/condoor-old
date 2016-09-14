@@ -36,8 +36,8 @@ import pexpect
 from condoor.actions import a_send, a_connection_closed, a_stays_connected, a_unexpected_prompt, a_expected_prompt,\
     a_expected_string_received
 from condoor.patterns import YPatternManager
-from ..controllers.fsm import FSM
-from ..exceptions import ConnectionError, CommandSyntaxError, CommandTimeoutError
+from condoor.controllers.fsm import FSM
+from condoor.exceptions import ConnectionError, CommandSyntaxError, CommandTimeoutError
 
 
 class Connection(object):
@@ -76,6 +76,7 @@ class Connection(object):
         self.press_return_re = self.pattern_manager.get_pattern(self.platform, 'press_return')
         self.more_re = self.pattern_manager.get_pattern(self.platform, 'more')
         self.rommon_re = self.pattern_manager.get_pattern(self.platform, 'rommon')
+        self.buffer_overflow = self.pattern_manager.get_pattern(self.platform, 'buffer_overflow')
 
     def __repr__(self):
         name = ""
@@ -411,7 +412,7 @@ class Connection(object):
         #                    0                         1                        2                        3
         events = [self.syntax_error_re, self.connection_closed_re, self.compiled_prompts[-1], self.press_return_re,
                   #        4           5                 6                7
-                  self.more_re, pexpect.TIMEOUT, pexpect.EOF]
+                  self.more_re, pexpect.TIMEOUT, pexpect.EOF, self.buffer_overflow]
 
         # add detected prompts chain
         events += self.compiled_prompts[:-1]  # without target prompt
@@ -426,6 +427,7 @@ class Connection(object):
             (self.more_re, [0], 0, partial(a_send, " "), 10),
             (self.compiled_prompts[-1], [0, 1], -1, a_expected_prompt, 0),
             (self.press_return_re, [0], -1, a_stays_connected, 0),
+            (self.buffer_overflow, [0], -1, CommandSyntaxError("Command too long", self.hostname), 0)
         ]
 
         for prompt in self.compiled_prompts[:-1]:

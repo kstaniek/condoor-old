@@ -27,16 +27,12 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-import logging
 from functools import wraps
+import logging
 from time import time
 from pexpect import EOF
-
-
-from ..exceptions import \
-    ConnectionError
-
-from ..utils import pattern_to_str
+from condoor.exceptions import ConnectionError
+from condoor.utils import pattern_to_str
 
 
 def action(func):

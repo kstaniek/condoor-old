@@ -28,14 +28,11 @@
 # =============================================================================
 
 import logging
-
 from time import sleep
 
-from ..utils import to_list
-from ..utils import delegate
-
-from ..controllers.protocols import make_protocol
-from ..exceptions import ConnectionError, ConnectionTimeoutError
+from condoor.utils import to_list, delegate
+from condoor.controllers.protocols import make_protocol
+from condoor.exceptions import ConnectionError, ConnectionTimeoutError
 
 
 # Delegate following methods to _session class

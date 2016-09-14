@@ -30,9 +30,7 @@ import re
 import time
 import pexpect
 
-from ...exceptions import ConnectionError, ConnectionTimeoutError
-
-from ..fsm import action
+from condoor.exceptions import ConnectionError, ConnectionTimeoutError
 from condoor.utils import levenshtein_distance
 
 
@@ -213,28 +211,6 @@ class Protocol(object):
                     self._dbg(30, "{}: {}: Password for {} does not exists in KeyRing".format(
                         self.protocol, self.hostname, self.username))
         return password
-
-    @action
-    def unable_to_connect(self, ctx):
-        ctx.msg = "{}{}".format(self.ctrl.before, self.ctrl.after)
-        return False
-
-    @action
-    def session_closed(self, ctx):
-        ctx.msg = "First session closed"
-        ctx.failed = True
-        return False
-
-    @action
-    def send_new_line(self, ctx):
-        # print(":".join("{:02x}".format(ord(c)) for c in ctx.ctrl.before))
-        ctx.ctrl.send("\r\n")
-        return True
-
-    @action
-    def save_pattern(self, ctx):
-        self.last_pattern = ctx.pattern
-        return True
 
     def _dbg(self, level, msg):
         self.logger.log(
