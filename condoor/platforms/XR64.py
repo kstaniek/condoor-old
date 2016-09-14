@@ -27,6 +27,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
+from functools import partial
 import re
 
 import generic
@@ -35,6 +36,7 @@ import pexpect
 from ..exceptions import ConnectionError, ConnectionAuthenticationError
 
 from ..controllers.fsm import FSM, action
+from actions import a_send_line
 
 
 class Connection(generic.Connection):
@@ -101,7 +103,7 @@ class Connection(generic.Connection):
              ConnectionAuthenticationError("Unable to reload", self.hostname), 0),
             (pexpect.EOF, [0, 1, 2, 3, 4, 5], -1,
              ConnectionError("Device disconnected", self.hostname), 0),
-            (pexpect.TIMEOUT, [6], 7, self._send_line, 180),
+            (pexpect.TIMEOUT, [6], 7, partial(a_send_line, ""), 180),
             (pexpect.TIMEOUT, [7], -1,
              ConnectionAuthenticationError("Unable to reconnect after reloading", self.hostname), 0),
         ]
@@ -116,7 +118,7 @@ class Connection(generic.Connection):
             # Preparing system for backup. This may take a few minutes especially for large configurations.
             (RELOAD, [0], 1, None, 120),
             (RELOAD_NA, [1], -1, self._reload_na, 0),
-            (CONFIRM_RELOAD, [1], 2, self._send_yes, 120),
+            (CONFIRM_RELOAD, [1], 2, partial(a_send_line, "yes"), 120),
             (DONE, [2], 3, None, reload_timeout),
             (STBY_CONSOLE, [3], -1, None, 10)
         ] + transitions_shared

@@ -27,7 +27,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-
+from functools import partial
 import re
 from threading import Lock
 
@@ -39,6 +39,9 @@ from ..exceptions import \
     CommandTimeoutError
 
 from ..controllers.fsm import FSM, action
+from actions import a_send, a_connection_closed, a_stays_connected, a_unexpected_prompt, a_expected_prompt,\
+    a_expected_string_received
+
 from condoor.patterns import YPatternManager
 
 
@@ -390,7 +393,7 @@ class Connection(object):
                 self._error("Exception: {}:{}".format(err.__class__, error_msg))
                 raise ConnectionError(message=error_msg, host=self.hostname)
 
-    def _determine_config_mode(self, prompt):
+    def determine_config_mode(self, prompt):
         if 'config' in prompt:
             self.mode = 'config'
         elif 'admin' in prompt:
@@ -409,63 +412,6 @@ class Connection(object):
         else:
             self._debug("Hostname not known: {}".format(prompt))
 
-    # Actions for FSM
-    @action
-    def _expected_string_received(self, ctx):
-        ctx.finished = True
-        return True
-
-    @action
-    def _expected_prompt(self, ctx):
-        prompt = self.ctrl.after
-        self.ctrl.detected_target_prompt = prompt
-        self._determine_config_mode(prompt)
-        self.determine_hostname(prompt)
-        ctx.finished = True
-        return True
-
-    @action
-    def _unexpected_prompt(self, ctx):
-        prompt = self.ctrl.after
-        ctx.msg = "Received the jump host prompt: '{}'".format(prompt)
-        self.ctrl.last_hop = self.detected_prompts.index(prompt)
-        self.ctrl.connected = False
-        return False
-
-    @action
-    def _connection_closed(self, ctx):
-        ctx.msg = "Device disconnected"
-        ctx.ctrl.connected = False
-        # do not stop FSM to detect the jumphost prompt
-        return True
-
-    @action
-    def _stays_connected(self, ctx):
-        self.ctrl.connected = True
-        self.ctrl.last_hop = len(self.ctrl.hosts) - 1  # Authentication needed
-        self.ctrl.last_pattern = ctx.ctrl.platform.press_return_re
-        return True
-
-    @action
-    def _send_lf(self, ctx):
-        ctx.ctrl.send('\r')
-        return True
-
-    @action
-    def _send_line(self, ctx):
-        ctx.ctrl.send('\r\n')
-        return True
-
-    @action
-    def _send_yes(self, ctx):
-        ctx.ctrl.sendline('yes')
-        return True
-
-    @action
-    def _send_space(self, ctx):
-        ctx.ctrl.send(' ')
-        return True
-
     def wait_for_prompt(self, timeout=60):
         #                    0                         1                        2                        3
         events = [self.syntax_error_re, self.connection_closed_re, self.compiled_prompts[-1], self.press_return_re,
@@ -479,16 +425,16 @@ class Connection(object):
 
         transitions = [
             (self.syntax_error_re, [0], -1, CommandSyntaxError("Command unknown", self.hostname), 0),
-            (self.connection_closed_re, [0], 1, self._connection_closed, 10),
+            (self.connection_closed_re, [0], 1, a_connection_closed, 10),
             (pexpect.TIMEOUT, [0], -1, CommandTimeoutError("Timeout waiting for prompt", self.hostname), 0),
             (pexpect.EOF, [0, 1], -1, ConnectionError("Unexpected device disconnect", self.hostname), 0),
-            (self.more_re, [0], 0, self._send_space, 10),
-            (self.compiled_prompts[-1], [0, 1], -1, self._expected_prompt, 0),
-            (self.press_return_re, [0], -1, self._stays_connected, 0),
+            (self.more_re, [0], 0, partial(a_send, " "), 10),
+            (self.compiled_prompts[-1], [0, 1], -1, a_expected_prompt, 0),
+            (self.press_return_re, [0], -1, a_stays_connected, 0),
         ]
 
         for prompt in self.compiled_prompts[:-1]:
-            transitions.append((prompt, [0, 1], 0, self._unexpected_prompt, 0))
+            transitions.append((prompt, [0, 1], 0, a_unexpected_prompt, 0))
 
         sm = FSM("WAIT-4-PROMPT", self.ctrl, events, transitions, timeout=timeout)
         return sm.run()
@@ -506,16 +452,16 @@ class Connection(object):
 
         transitions = [
             (self.syntax_error_re, [0], -1, CommandSyntaxError("Command unknown", self.hostname), 0),
-            (self.connection_closed_re, [0], 1, self._connection_closed, 10),
+            (self.connection_closed_re, [0], 1, a_connection_closed, 10),
             (pexpect.TIMEOUT, [0], -1, CommandTimeoutError("Timeout waiting for string", self.hostname), 0),
             (pexpect.EOF, [0, 1], -1, ConnectionError("Unexpected device disconnect", self.hostname), 0),
-            (self.more_re, [0], 0, self._send_space, 10),
-            (expected_string, [0], -1, self._expected_string_received, 0),
-            (self.press_return_re, [0], -1, self._stays_connected, 0)
+            (self.more_re, [0], 0, partial(a_send, " "), 10),
+            (expected_string, [0], -1, a_expected_string_received, 0),
+            (self.press_return_re, [0], -1, a_stays_connected, 0)
         ]
 
         for prompt in self.compiled_prompts[:-1]:
-            transitions.append((prompt, [0, 1], 0, self._unexpected_prompt, 0))
+            transitions.append((prompt, [0, 1], 0, a_unexpected_prompt, 0))
 
         sm = FSM("WAIT-4-STR", self.ctrl, events, transitions, timeout=timeout)
         return sm.run()

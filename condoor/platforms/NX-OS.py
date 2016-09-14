@@ -49,6 +49,3 @@ class Connection(generic.Connection):
             self.send("copy running-config startup-config")
         self.send("reload", wait_for_string="This command will reboot the system")
         self.ctrl.sendline("y")
-
-    def enable(self, enable_password=None):
-        pass

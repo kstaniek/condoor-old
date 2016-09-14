@@ -27,13 +27,14 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
+from functools import partial
 import re
 import pexpect
 
 import generic
 from ..exceptions import ConnectionError, ConnectionAuthenticationError
 
-from ..controllers.fsm import FSM, action
+from actions import a_send, a_send_line, a_send_password
 
 
 class Connection(generic.Connection):
@@ -75,34 +76,37 @@ class Connection(generic.Connection):
         [OK]
         Proceed with reload? [confirm]
         """
-        pass
+        RELOAD_CMD = "reload"
+        SAVE_CONFIG = re.compile(re.escape("System configuration has been modified. Save? [yes/no]: "))
+        PROCEED = re.compile(re.escape("Proceed with reload? [confirm]"))
+
+        response = "yes" if save_config else "no"
+
+        events = [SAVE_CONFIG, PROCEED, pexpect.TIMEOUT, pexpect.EOF]
+
+        transitions = [
+            (SAVE_CONFIG, [0], 1, partial(a_send_line, response), 60),
+            (PROCEED, [0, 1], -1, partial(a_send, "\r"), 10),
+            # if timeout try to send the reload command again
+            (pexpect.TIMEOUT, [0], 0, partial(a_send_line, RELOAD_CMD), 10),
+            (pexpect.EOF, [0, 1], -1, None, 0)
+        ]
+        return self.run_fsm("IOS-RELOAD", RELOAD_CMD, events, transitions, timeout=10, max_transitions=5)
 
     def enable(self, enable_password=None):
-        self._send_command("enable")
+
+        ENABLE_CMD = "enable"
         prompt = self.compiled_prompts[-1]
+        enable_password = enable_password if enable_password else self._get_enable_password()
 
         events = [self.password_re, prompt, pexpect.TIMEOUT, pexpect.EOF]
         transitions = [
-            (self.password_re, [0], 1, self._send_enable_password, 10),
-            (self.password_re, [1], -1,
-             ConnectionAuthenticationError("Incorrect enable password", self.hostname), 0),
+            (self.password_re, [0], 1, partial(a_send_password, enable_password), 10),
+            (self.password_re, [1], -1, ConnectionAuthenticationError("Incorrect enable password", self.hostname), 0),
             (prompt, [0, 1, 2, 3], -1, None, 0),
             (pexpect.TIMEOUT, [0, 1, 2], -1,
              ConnectionAuthenticationError("Unable to get privilidge mode", self.hostname), 0),
             (pexpect.EOF, [0, 1, 2], -1, ConnectionError("Device disconnected", self.hostname), 0)
         ]
 
-        fs = FSM("IOS-ENABLE", self.ctrl, events, transitions, timeout=10)
-        return fs.run()
-
-    @action
-    def _send_lf(self, ctx):
-        ctx.ctrl.send('\r')
-        return True
-
-    @action
-    def _send_enable_password(self, ctx):
-        ctx.ctrl.setecho(False)
-        ctx.ctrl.sendline(self._get_enable_password())
-        ctx.ctrl.setecho(True)
-        return True
+        return self.run_fsm("IOS-ENABLE", ENABLE_CMD, events, transitions, timeout=10, max_transitions=5)
