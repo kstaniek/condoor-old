@@ -86,7 +86,6 @@ if __name__ == "__main__":
 
     urls.append(options.host_url)
 
-
     if len(args) > 0:
         command = " ".join(args)
     else:
