@@ -104,7 +104,7 @@ class TestNCS1KConnection(TestCase):
     def test_NCS1K_3_connection_wrong_user(self):
         urls = ["telnet://root:admin@127.0.0.1:10023"]
         self.conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=0)
-        with self.assertRaises(condoor.ConnectionError):
+        with self.assertRaises(condoor.ConnectionAuthenticationError):
             self.conn.discovery(self.logfile_condoor)
 
     # TODO: Add unexpected disconnect test
