@@ -26,7 +26,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-from ..controllers.fsm import action
+from condoor.controllers.fsm import action
+from condoor.exceptions import ConnectionAuthenticationError
 
 
 @action
@@ -43,10 +44,20 @@ def a_send(text, ctx):
 
 @action
 def a_send_password(password, ctx):
-    ctx.ctrl.setecho(False)
-    ctx.ctrl.sendline(password)
-    ctx.ctrl.setecho(True)
-    return True
+    if password:
+        ctx.ctrl.setecho(False)
+        ctx.ctrl.sendline(password)
+        ctx.ctrl.setecho(True)
+        return True
+    else:
+        ctx.ctrl.disconnect()
+        raise ConnectionAuthenticationError("Password not provided", ctx.ctrl.hostname)
+
+
+@action
+def a_authentication_error(ctx):
+    ctx.ctrl.disconnect()
+    raise ConnectionAuthenticationError("Authentication failed", ctx.ctrl.hostname)
 
 
 @action

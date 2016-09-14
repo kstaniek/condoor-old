@@ -30,12 +30,10 @@ import re
 import time
 import pexpect
 
-from ...exceptions import \
-    ConnectionAuthenticationError, \
-    ConnectionError, \
-    ConnectionTimeoutError
+from ...exceptions import ConnectionError, ConnectionTimeoutError
 
 from ..fsm import action
+from condoor.utils import levenshtein_distance
 
 
 class Protocol(object):
@@ -123,7 +121,7 @@ class Protocol(object):
         """
         Protocol specific implementation
         """
-        raise NotImplementedError("Authentication method not implemented")
+        raise NotImplementedError("Disconnect method not implemented")
 
     def try_read_prompt(self, timeout_multiplier):
         """
@@ -160,30 +158,6 @@ class Protocol(object):
         prompt = prompt.strip()
         return prompt
 
-    def levenshtein_distance(self, a, b):
-        """
-        This calculates the Levenshtein distance between string a and b.
-
-        :param a: String - input string a
-        :param b: String - input string b
-        :return: Number - Levenshtein Distance between string a and b
-        """
-
-        n, m = len(a), len(b)
-        if n > m:
-            a, b = b, a
-            n, m = m, n
-        current = range(n + 1)
-        for i in range(1, m + 1):
-            previous, current = current, [i] + [0] * n
-            for j in range(1, n + 1):
-                add, delete = previous[j] + 1, current[j - 1] + 1
-                change = previous[j - 1]
-                if a[j - 1] != b[i - 1]:
-                    change += + 1
-                current[j] = min(add, delete, change)
-        return current[n]
-
     def detect_prompt(self, sync_multiplier=4):
         """
         This attempts to find the prompt. Basically, press enter and record
@@ -210,7 +184,7 @@ class Protocol(object):
             self.ctrl.sendline()
             b = self.try_read_prompt(sync_multiplier)
 
-            ld = self.levenshtein_distance(a, b)
+            ld = levenshtein_distance(a, b)
             len_a = len(a)
             self._dbg(10, "LD={},MP={}".format(ld, sync_multiplier))
             sync_multiplier *= 1.2
@@ -241,35 +215,6 @@ class Protocol(object):
         return password
 
     @action
-    def send_username(self, ctx):
-        ctx.ctrl.sendline(self.username)
-        ctx.timeout = 10
-        return True
-
-    @action
-    def send_pass(self, ctx):
-        password = self._acquire_password()
-        if password:
-            ctx.ctrl.setecho(False)
-            ctx.ctrl.sendline(password)
-            ctx.ctrl.setecho(True)
-            ctx.timeout = 30
-            return True
-        else:
-            self.disconnect()
-            raise ConnectionAuthenticationError("Password not provided", self.hostname)
-
-    @action
-    def try_detect_prompt(self, ctx):
-        ctx.finished = True
-        return self.detect_prompt()
-
-    @action
-    def authentication_error(self, ctx):
-        self.disconnect()
-        raise ConnectionAuthenticationError("Authentication failed", self.hostname)
-
-    @action
     def unable_to_connect(self, ctx):
         ctx.msg = "{}{}".format(self.ctrl.before, self.ctrl.after)
         return False
@@ -289,11 +234,6 @@ class Protocol(object):
     @action
     def save_pattern(self, ctx):
         self.last_pattern = ctx.pattern
-        return True
-
-    @action
-    def send_q(self, ctx):
-        ctx.ctrl.send("q")
         return True
 
     def _dbg(self, level, msg):

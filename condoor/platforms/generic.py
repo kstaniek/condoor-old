@@ -27,22 +27,17 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-from functools import partial
 import re
+from functools import partial
 from threading import Lock
 
 import pexpect
 
-from ..exceptions import \
-    ConnectionError,\
-    CommandSyntaxError, \
-    CommandTimeoutError
-
-from ..controllers.fsm import FSM, action
-from actions import a_send, a_connection_closed, a_stays_connected, a_unexpected_prompt, a_expected_prompt,\
+from condoor.actions import a_send, a_connection_closed, a_stays_connected, a_unexpected_prompt, a_expected_prompt,\
     a_expected_string_received
-
 from condoor.patterns import YPatternManager
+from ..controllers.fsm import FSM
+from ..exceptions import ConnectionError, CommandSyntaxError, CommandTimeoutError
 
 
 class Connection(object):

@@ -26,17 +26,16 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-from functools import partial
 import re
+from functools import partial
 
-import generic
 import pexpect
 
-from ..exceptions import ConnectionError, ConnectionAuthenticationError, CommandSyntaxError, CommandTimeoutError
-
-from ..controllers.fsm import FSM, action
-from actions import a_reload_na, a_send, a_send_line, a_connection_closed, a_stays_connected, a_unexpected_prompt,\
+import generic
+from condoor.actions import a_reload_na, a_send, a_send_line, a_connection_closed, a_stays_connected, a_unexpected_prompt,\
     a_expected_prompt
+from ..controllers.fsm import FSM, action
+from ..exceptions import ConnectionError, ConnectionAuthenticationError, CommandSyntaxError, CommandTimeoutError
 
 
 class Connection(generic.Connection):

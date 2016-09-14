@@ -27,14 +27,14 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-from functools import partial
 import re
+from functools import partial
+
 import pexpect
 
 import generic
+from condoor.actions import a_send, a_send_line, a_send_password
 from ..exceptions import ConnectionError, ConnectionAuthenticationError
-
-from actions import a_send, a_send_line, a_send_password
 
 
 class Connection(generic.Connection):

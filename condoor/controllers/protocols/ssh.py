@@ -27,16 +27,15 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-from base import Protocol
-
+from functools import partial
 import pexpect
+
+from base import Protocol
 from ..fsm import FSM, action
 from ...utils import pattern_to_str
+from condoor.actions import a_send_password, a_authentication_error
 
-from ...exceptions import \
-    ConnectionAuthenticationError, \
-    ConnectionError, \
-    ConnectionTimeoutError
+from ...exceptions import ConnectionAuthenticationError, ConnectionError, ConnectionTimeoutError
 
 
 MODULUS_TOO_SMALL = "modulus too small"
@@ -97,8 +96,8 @@ class SSH(Protocol):
 
         transitions = [
             (self.press_return_pattern, [0, 1], 1, self.send_new_line, 10),
-            (self.password_pattern, [0], 1, self.send_pass, 20),
-            (self.password_pattern, [1], -1, ConnectionAuthenticationError("Authentication error", self.hostname), 0),
+            (self.password_pattern, [0], 1, partial(a_send_password, self._acquire_password()), 20),
+            (self.password_pattern, [1], -1, a_authentication_error, 0),
             (self.prompt_pattern, [0, 1], -1, None, 0),
             (pexpect.TIMEOUT, [1], -1,
              ConnectionError("Error getting device prompt") if self.ctrl.is_target else self.send_new_line, 0)

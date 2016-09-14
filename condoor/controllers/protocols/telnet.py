@@ -26,6 +26,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
+from functools import partial
 import re
 import pexpect
 
@@ -33,6 +34,7 @@ from base import Protocol
 
 from ..fsm import FSM, action
 from ...utils import pattern_to_str
+from condoor.actions import a_send, a_send_line, a_send_password, a_authentication_error
 
 from ...exceptions import ConnectionError, ConnectionTimeoutError
 
@@ -67,7 +69,7 @@ class Telnet(Protocol):
             (self.standby_pattern, [0, 5], -1, ConnectionError("Standby console", self.hostname), 0),
             (self.username_pattern, [0, 1, 5, 6], -1, self.save_pattern, 0),
             (self.password_pattern, [0, 1, 5], -1, self.save_pattern, 0),
-            (self.more_pattern, [0, 5], 7, self.send_q, 10),
+            (self.more_pattern, [0, 5], 7, partial(a_send, "q"), 10),
             # router sends it again to delete
             (self.more_pattern, [7], 8, None, 10),
             # (prompt, [0, 1, 5], 6, self.send_new_line, 10),
@@ -92,15 +94,16 @@ class Telnet(Protocol):
                   pexpect.TIMEOUT, pexpect.EOF]
 
         transitions = [
-            (self.username_pattern, [0], 1, self.send_username, 10),
+            (self.username_pattern, [0], 1, partial(a_send_line, self.username), 10),
             (self.username_pattern, [1], 1, None, 10),
-            (self.password_pattern, [0, 1], 2, self.send_pass, 20),
-            (self.username_pattern, [2], -1, self.authentication_error, 0),
+            (self.password_pattern, [0, 1], 2, partial(a_send_password, self._acquire_password()), 20),
+            (self.username_pattern, [2], -1, a_authentication_error, 0),
+            (self.password_pattern, [2], -1, a_authentication_error, 0),
             (self.prompt_pattern, [0, 1, 2], -1, None, 0),
             (self.rommon_pattern, [0], -1, self.send_new_line, 0),
             (pexpect.TIMEOUT, [0], 1, self.send_new_line, 10),
             (pexpect.TIMEOUT, [2], -1, None, 0),
-            (AUTH_FAILED, [2], -1, self.authentication_error, 0),
+            (AUTH_FAILED, [2], -1, a_authentication_error, 0),
             (pexpect.TIMEOUT, [3, 7], -1, ConnectionTimeoutError("Connection Timeout", self.hostname), 0),
         ]
 
@@ -141,7 +144,7 @@ class TelnetConsole(Telnet):
             (self.standby_pattern, [0, 5], -1, ConnectionError("Standby console", self.hostname), 0),
             (self.username_pattern, [0, 1, 5, 6], -1, self.save_pattern, 0),
             (self.password_pattern, [0, 1, 5], -1, self.save_pattern, 0),
-            (self.more_pattern, [0, 5], 7, self.send_q, 10),
+            (self.more_pattern, [0, 5], 7, partial(a_send, "q"), 10),
             # router sends it again to delete
             (self.more_pattern, [7], 8, None, 10),
             # (prompt, [0, 1, 5], 6, self.send_new_line, 10),
