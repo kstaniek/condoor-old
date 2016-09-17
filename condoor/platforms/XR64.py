@@ -40,6 +40,7 @@ class Connection(generic.Connection):
     This is a platform specific implementation of based Driver class
     """
     platform = 'XR64'
+    inventory_cmd = 'admin show inventory chassis'
     target_prompt_components = ['prompt_dynamic', 'prompt_default', 'rommon', 'calvados', 'xml']
 
     def __init__(self, name, hosts, controller_class, logger, is_console=False, account_manager=None):

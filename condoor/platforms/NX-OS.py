@@ -34,6 +34,7 @@ class Connection(generic.Connection):
     This is a platform specific implementation of based Driver class
     """
     platform = 'NX-OS'
+    inventory_cmd = 'show inventory chassis'
     target_prompt_components = ['prompt_dynamic', 'prompt_default', 'rommon']
 
     def prepare_terminal_session(self):

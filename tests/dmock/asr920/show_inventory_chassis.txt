@@ -1,0 +1,9 @@
+NAME: "Chassis", DESCR: "Cisco ASR920 Series - 12GE and 2-10GE - AC model"
+PID: ASR-920-12CZ-A    , VID: V01, SN: CAT1928U2YX
+
+NAME: "subslot 0/0 transceiver 12", DESCR: "SFP+ 10GBASE-SR"
+PID: SFP-10G-SR          , VID: A   , SN: FNS16231S18
+
+NAME: "subslot 0/0 transceiver 13", DESCR: "SFP+ 10GBASE-SR"
+PID: SFP-10G-SR          , VID: A   , SN: FNS150212FT
+

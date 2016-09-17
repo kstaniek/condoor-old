@@ -39,6 +39,7 @@ class Connection(generic.Connection):
     This is a platform specific implementation of based Driver class
     """
     platform = 'XR'
+    inventory_cmd = 'admin show inventory chassis'
     target_prompt_components = ['prompt_dynamic', 'prompt_default', 'rommon', 'xml']
 
     def prepare_terminal_session(self):

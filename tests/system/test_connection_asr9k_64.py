@@ -55,18 +55,21 @@ class TestASR9K64Connection(TestCase):
             self.logfile_condoor = None  # sys.stderr
             self.log_level = 0
 
-        try:
-            os.remove('/tmp/condoor.shelve')
-        except OSError:
-            pass
 
     def tearDown(self):
-        self.conn.disconnect()
+        # Disconnect to make sure the server finishes the current request
+        if self.conn.is_connected:
+            self.conn.disconnect()
         self.server.shutdown()
         self.server.server_close()
         self.server_thread.join()
 
     def test_ASR9K64_1_discovery(self):
+        """ASR9k-64: Test whether the cached information is used"""
+        try:
+            os.remove('/tmp/condoor.shelve')
+        except OSError:
+            pass
         urls = ["telnet://admin:admin@127.0.0.1:10023"]
         conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)
         self.conn = conn

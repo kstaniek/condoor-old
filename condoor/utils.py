@@ -28,6 +28,7 @@
 
 import socket
 import time
+import re
 
 
 def delegate(attribute_name, method_names):
@@ -140,3 +141,36 @@ def levenshtein_distance(a, b):
                 change += + 1
             current[j] = min(add, delete, change)
     return current[n]
+
+
+def parse_inventory(inventory_output=None):
+    udi = {
+        "name": "",
+        "description": "",
+        "pid": "",
+        "vid": "",
+        "sn": ""
+    }
+    if inventory_output is None:
+        return udi
+
+    match = re.search(r"(?i)NAME: (?P<name>.*?),? (?i)DESCR", inventory_output, re.MULTILINE)
+    if match:
+        udi['name'] = match.group('name').strip('" ,')
+
+    match = re.search(r"(?i)DESCR: (?P<description>.*)", inventory_output, re.MULTILINE)
+    if match:
+        udi['description'] = match.group('description').strip('" ')
+
+    match = re.search(r"(?i)PID: (?P<pid>.*?),? ", inventory_output, re.MULTILINE)
+    if match:
+        udi['pid'] = match.group('pid')
+
+    match = re.search(r"(?i)VID: (?P<vid>.*?),? ", inventory_output, re.MULTILINE)
+    if match:
+        udi['vid'] = match.group('vid')
+
+    match = re.search(r"(?i)SN: (?P<sn>.*)", inventory_output, re.MULTILINE)
+    if match:
+        udi['sn'] = match.group('sn')
+    return udi

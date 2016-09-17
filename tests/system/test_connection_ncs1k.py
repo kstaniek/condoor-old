@@ -57,11 +57,6 @@ class TestNCS1KConnection(TestCase):
             self.logfile_condoor = None  # sys.stderr
             self.log_level = 0
 
-        try:
-            os.remove('/tmp/condoor.shelve')
-        except OSError:
-            pass
-
     def tearDown(self):
 
         self.server.shutdown()
@@ -70,6 +65,11 @@ class TestNCS1KConnection(TestCase):
         self.server_thread.join()
 
     def test_NCS1K_1_discovery(self):
+        """NCS1k: Test the connection and discovery"""
+        try:
+            os.remove('/tmp/condoor.shelve')
+        except OSError:
+            pass
 
         urls = ["telnet://admin:admin@127.0.0.1:10023"]
         conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)

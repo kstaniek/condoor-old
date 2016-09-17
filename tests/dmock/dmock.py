@@ -56,11 +56,27 @@ class DeviceHandler(TelnetHandler):
     authNeedPass = True
     USERNAME = "admin"
     PASSWORD = "admin"
+    AUTH_MESSAGE = "User Access Verification\n"
+    PROMPT_USER = "Username: "
+    PROMPT_PASS = "Password: "
+    PROMPT = "IOS#"
+    WELCOME = "\n"
+    #GOODBYE = "Connection closed by foreign host."
+    GOODBYE = None
 
     def authCallback(self, username, password):
-        if username != self.USERNAME or password != self.PASSWORD:
-            raise Exception()
+        if self.authNeedUser:
+            if username != self.USERNAME:
+                raise Exception()
+        if self.authNeedPass:
+            if password != self.PASSWORD:
+                raise Exception()
         return True
+
+        # if username != self.USERNAME or password != self.PASSWORD:
+        #     raise Exception()
+        # return True
+
 
     def get_response(self, command_line):
         response = self.response_dict.get(command_line, None)
@@ -112,6 +128,12 @@ class DeviceHandler(TelnetHandler):
     def wrongcommand(self, params):
         self.writeresponse(self.WRONGCOMMAND)
 
+    @command('exit')
+    def exit(self, params):
+        self.RUNSHELL = False
+        if self.GOODBYE:
+            self.writeline(self.GOODBYE)
+
     def authentication_ok(self):
         """Checks the authentication and sets the username of the currently connected terminal.
         Returns True or False
@@ -134,7 +156,8 @@ class DeviceHandler(TelnetHandler):
                         return True
 
                     if self.DOECHO:
-                        self.write("\n")
+                        pass
+                        #self.write("\n")
                 try:
                     self.authCallback(username, password)
                 except Exception:
@@ -157,7 +180,6 @@ class DeviceHandler(TelnetHandler):
 class XRHandler(DeviceHandler):
     """Generic IOSXR handler"""
 
-    WELCOME = "\n"
     PROMPT = "RP/0/RP0/CPU0:ios#"
     TELNET_ISSUE = "\nUser Access Verification\n"  # does not work
     AUTH_MESSAGE = "\nUser Access Verification\n"
@@ -298,3 +320,66 @@ class SunHandler(DeviceHandler):
         self.writeresponse("""Trying host1...
 Connected to host1.
 Escape character is '^]'.""")
+
+
+class IOSXEHandler(DeviceHandler):
+    AUTH_MESSAGE = "\n\nUser Access Verification\n"
+    PROMPT_PASS = "Password: Kerberos: No default realm defined for Kerberos!\n"
+    PROMPT_PASS_E = "Password: "
+    AUTH_FAILED_MESSAGE = "% Bad passwords\n"
+    ENABLE_FAILED_MESSAGE = "% Bad secrets\n"
+    PROMPT = "IOS#"
+    WELCOME = ""
+    ENABLE_PASSWORD = "admin"
+    WRONGCOMMAND = "% Bad IP address or host name% Unknown command or computer name, or unable to find computer address"
+
+    @command(['show'])
+    def show(self, params):
+        self.cmd(params=params)
+
+    @command(['enable', 'en'])
+    def enable(self, params):
+        for _ in range(3):
+            password = self.readline(echo=False, prompt=self.PROMPT_PASS_E, use_history=False)
+            if password == 'QUIT':
+                self.RUNSHELL = False
+                return True
+            if self.DOECHO:
+                self.write("\n")
+            if password == self.ENABLE_PASSWORD:
+                self.PROMPT = self.PROMPT[:-1] + "#"
+                break
+        else:
+            self.writeresponse(self.ENABLE_FAILED_MESSAGE)
+
+    @command(['disable'])
+    def disable(self, params):
+        self.PROMPT = self.PROMPT[:-1] + ">"
+
+
+class ASR920Handler(IOSXEHandler):
+    platform = "ASR920"
+    authNeedUser = False
+    PROMPT = "CSG-5502-ASR920>"
+
+
+class ASR903Handler(IOSXEHandler):
+    platform = "ASR903"
+    authNeedUser = False
+    PROMPT = "PAN-5205-ASR903>"
+
+
+if __name__ == '__main__':
+
+    from threading import Thread
+    server = TelnetServer(("127.0.0.1", 10025), ASR920Handler)
+    server_thread = Thread(target=server.serve_forever)
+    server_thread.daemon = True
+    server_thread.start()
+
+    raw_input("Press Enter to continue...")
+
+    server.shutdown()
+    server.server_close()
+    server_thread.join()
+

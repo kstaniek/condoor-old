@@ -37,11 +37,13 @@ from condoor.actions import a_send, a_connection_closed, a_stays_connected, a_un
     a_expected_string_received
 from condoor.patterns import YPatternManager
 from condoor.controllers.fsm import FSM
-from condoor.exceptions import ConnectionError, CommandSyntaxError, CommandTimeoutError
+from condoor.exceptions import ConnectionError, CommandError, CommandSyntaxError, CommandTimeoutError
+from condoor.utils import parse_inventory
 
 
 class Connection(object):
     platform = 'generic'
+    inventory_cmd = None
     target_prompt_components = ['prompt_dynamic']
 
     def __init__(self, name, hosts, controller_class, logger, is_console=False, account_manager=None):
@@ -63,6 +65,7 @@ class Connection(object):
         self.is_console = is_console
         self.prompt = self.pattern_manager.get_pattern('generic', 'prompt')
         self.is_rommon = False
+        self.udi = parse_inventory()
 
         for _ in xrange(len(self.hosts) + 1):
             self.compiled_prompts.append(None)
@@ -331,6 +334,16 @@ class Connection(object):
         self.prompt = self.ctrl.detected_target_prompt
         self._debug("Dynamic prompt: '{}'".format(prompt_re.pattern))
 
+    def collect_udi(self):
+        try:
+            inventory = self.send(self.inventory_cmd)
+        except (CommandError, ConnectionError):
+            self._debug("UDI not collected")
+            return None
+
+        if inventory:
+            self.udi = parse_inventory(inventory)
+
     def _detect_rommon(self, prompt):
         if prompt:
             result = re.search(self.rommon_re, prompt)
@@ -385,6 +398,7 @@ class Connection(object):
                 raise ConnectionError("Unexpected session disconnect", host=self.hostname)
 
             except Exception as err:
+                raise
                 error_msg = str(err)
                 self._error("Exception: {}:{}".format(err.__class__, error_msg))
                 raise ConnectionError(message=error_msg, host=self.hostname)

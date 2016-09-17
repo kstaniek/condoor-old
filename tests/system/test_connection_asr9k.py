@@ -55,18 +55,22 @@ class TestASR9KConnection(TestCase):
             self.logfile_condoor = None  # sys.stderr
             self.log_level = 0
 
-        try:
-            os.remove('/tmp/condoor.shelve')
-        except OSError:
-            pass
-
     def tearDown(self):
-        self.conn.disconnect()
+        # Disconnect to make sure the server finishes the current request
+        if self.conn.is_connected:
+            self.conn.disconnect()
         self.server.shutdown()
         self.server.server_close()
         self.server_thread.join()
 
     def test_ASR9K_1_discovery(self):
+        """ASR9k: Test the connection and discovery"""
+
+        try:
+            os.remove('/tmp/condoor.shelve')
+        except OSError:
+            pass
+
         urls = ["telnet://admin:admin@127.0.0.1:10023"]
         conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)
         self.conn = conn
@@ -90,14 +94,41 @@ class TestASR9KConnection(TestCase):
 
         conn.disconnect()
 
-    def test_ASR9K_2_connection_wrong_user(self):
+    def test_ASR9K_2_discovery(self):
+        """ASR9k: Test whether the cached information is used"""
+        urls = ["telnet://admin:admin@127.0.0.1:10023"]
+        conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)
+        self.conn = conn
+        conn.connect(self.logfile_condoor)
+
+        self.assertEqual(conn._discovered, True, "Not discovered properly")
+        self.assertEqual(conn.hostname, "ios", "Wrong Hostname: {}".format(conn.hostname))
+        self.assertEqual(conn.family, "ASR9K", "Wrong Family: {}".format(conn.family))
+        self.assertEqual(conn.platform, "ASR-9904", "Wrong Platform: {}".format(conn.platform))
+        self.assertEqual(conn.os_type, "XR", "Wrong OS Type: {}".format(conn.os_type))
+        self.assertEqual(conn.os_version, "5.3.3", "Wrong Version: {}".format(conn.os_version))
+        self.assertEqual(conn.udi['name'], "chassis ASR-9904-AC", "Wrong Name: {}".format(conn.udi['name']))
+        self.assertEqual(conn.udi['description'], "ASR 9904 2 Line Card Slot Chassis with V2 AC PEM",
+                         "Wrong Description: {}".format(conn.udi['description']))
+        self.assertEqual(conn.udi['pid'], "ASR-9904-AC", "Wrong PID: {}".format(conn.udi['pid']))
+        self.assertEqual(conn.udi['vid'], "V01", "Wrong VID: {}".format(conn.udi['vid']))
+        self.assertEqual(conn.udi['sn'], "FOX1830GT5W", "Wrong S/N: {}".format(conn.udi['sn']))
+        self.assertEqual(conn.prompt, "RP/0/RP0/CPU0:ios#", "Wrong Prompt: {}".format(conn.prompt))
+        with self.assertRaises(condoor.CommandSyntaxError):
+            conn.send("wrongcommand")
+
+        conn.disconnect()
+
+    def test_ASR9K_3_connection_wrong_user(self):
+        """ASR9k: Test wrong username"""
         urls = ["telnet://root:admin@127.0.0.1:10023"]
         self.conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)
 
         with self.assertRaises(condoor.ConnectionAuthenticationError):
             self.conn.connect(self.logfile_condoor)
 
-    def test_ASR9K_3_connection_refused(self):
+    def test_ASR9K_4_connection_refused(self):
+        """ASR9k: Test when the connection is refused"""
         urls = ["telnet://admin:admin@127.0.0.1:10024"]
         self.conn = condoor.Connection("host", urls, log_session=self.log_session, log_level=self.log_level)
         with self.assertRaises(condoor.ConnectionError):

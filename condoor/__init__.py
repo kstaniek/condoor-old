@@ -177,13 +177,13 @@ class Connection(object):
         self._info = {}
         self._is_console = False
 
-        self._udi = {
-            "name": "",
-            "description": "",
-            "pid": "",
-            "vid": "",
-            "sn": ""
-        }
+        # self._udi = {
+        #     "name": "",
+        #     "description": "",
+        #     "pid": "",
+        #     "vid": "",
+        #     "sn": ""
+        # }
 
         if log_level > 0:
             formatter = logging.Formatter('%(asctime)-15s %(levelname)8s: %(message)s')
@@ -353,42 +353,7 @@ class Connection(object):
 
         self._family = _family
 
-    def _update_udi(self):
-        # FIXME: Move to platform driver
-        if self._os_type in ['XR', 'eXR']:
-            cmd = 'admin show inventory chassis'
-        elif self._os_type in ['NX-OS']:
-            cmd = 'show inventory chassis'
-        elif self._os_type in ['IOS', 'XE']:
-            cmd = 'show inventory'
-        else:
-            return self._udi  # do not detect
-
-        # if command not supported return empty uid dict so far
-        try:
-            show_inventory_chassis = self._driver.send(cmd)
-        except CommandError:
-            return self._udi
-
-        match = re.search(r"(?i)NAME: (?P<name>.*?),? (?i)DESCR", show_inventory_chassis, re.MULTILINE)
-        if match:
-            self._udi['name'] = match.group('name').strip('" ,')
-
-        match = re.search(r"(?i)DESCR: (?P<description>.*)", show_inventory_chassis, re.MULTILINE)
-        if match:
-            self._udi['description'] = match.group('description').strip('" ')
-
-        match = re.search(r"(?i)PID: (?P<pid>.*?),? ", show_inventory_chassis, re.MULTILINE)
-        if match:
-            self._udi['pid'] = match.group('pid')
-
-        match = re.search(r"(?i)VID: (?P<vid>.*?),? ", show_inventory_chassis, re.MULTILINE)
-        if match:
-            self._udi['vid'] = match.group('vid')
-
-        match = re.search(r"(?i)SN: (?P<sn>.*)", show_inventory_chassis, re.MULTILINE)
-        if match:
-            self._udi['sn'] = match.group('sn')
+    # _udi
 
     def discovery(self, logfile=None):
         """This method detects the device details. This method discovery the several device attributes.
@@ -439,7 +404,6 @@ class Connection(object):
             raise excpt
 
         self._update_device_info()
-        self._update_udi()
 
         self._prompt = self._driver.prompt
         self._is_console = self._detect_console()
@@ -462,6 +426,9 @@ class Connection(object):
         # New driver initialized so need to copy detected prompts from controller
         self._driver.detected_prompts = self._driver.ctrl.detected_prompts
         self._hostname = self._driver.hostname
+
+        self._driver._compile_prompts()
+        self._driver.collect_udi()
 
         self.logger.info("Hostname: '{}'".format(self.hostname))
         self.logger.info("Family: {}".format(self.family))
@@ -637,7 +604,7 @@ class Connection(object):
     @property
     def platform(self):
         """Returns the string representing hardware platform model. For example: ASR-9010, ASR922, NCS-4006, etc."""
-        __pid = self._udi['pid']
+        __pid = self._driver.udi['pid']
         match = re.search(r"([A-Z]{3}[-| ]?[0-9]{3,4})", __pid)
         if match:
             return match.group(1)
@@ -703,27 +670,27 @@ class Connection(object):
     @property
     def name(self):
         """Returns the chassis name"""
-        return self._udi['name']
+        return self._driver.udi['name']
 
     @property
     def description(self):
         """Returns the chassis description."""
-        return self._udi['description']
+        return self._driver.udi['description']
 
     @property
     def pid(self):
         """Returns the chassis PID."""
-        return self._udi['pid']
+        return self._driver.udi['pid']
 
     @property
     def vid(self):
         """Returns the chassis VID."""
-        return self._udi['vid']
+        return self._driver.udi['vid']
 
     @property
     def sn(self):
         """Returns the chassis SN."""
-        return self._udi['sn']
+        return self._driver.udi['sn']
 
     @property
     def udi(self):
@@ -737,7 +704,7 @@ class Connection(object):
             }
 
         """
-        return self._udi
+        return self._driver.udi
 
     @property
     def device_info(self):
@@ -777,7 +744,6 @@ class Connection(object):
         self._is_console = ddr['console']
         self._last_driver_index = ddr['last_driver']
         self._hostname = ddr['hostname']
-        self._udi = ddr['udi']
         self._prompt = ddr['device_prompt']
 
         di = ddr['device_info']
@@ -788,6 +754,6 @@ class Connection(object):
 
         driver_name = ddr['driver_name']
         self._init_driver(driver_name)
-
+        self._driver.udi = ddr['udi']
         self._driver.detected_prompts = ddr['detected_prompts']
         self._driver.determine_hostname(self._prompt)

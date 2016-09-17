@@ -25,3 +25,28 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
+
+
+import condoor
+import sys
+
+
+urls = ["telnet://lab:lab@172.20.163.39/lab"]
+
+conn = condoor.Connection("host", urls, log_session=True)
+conn.connect(sys.stderr)
+show_version = conn.send("show version")
+show_inventory = conn.send("show inventory chassis")
+show_users = conn.send("show users")
+conn.disconnect()
+
+print("-" * 20)
+print(show_version)
+print("-" * 20)
+print(show_inventory)
+print("-" * 20)
+print(show_users)
+print("-" * 20)
+
+
+
