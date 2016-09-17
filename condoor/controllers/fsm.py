@@ -33,6 +33,7 @@ from time import time
 from pexpect import EOF
 from condoor.exceptions import ConnectionError
 from condoor.utils import pattern_to_str
+from inspect import isclass
 
 
 def action(func):
@@ -84,10 +85,9 @@ class FSM(object):
         """
 
     class Context(object):
-        _slots__ = ['fsm_name', 'ctrl', 'event_index', 'event', 'state', 'finished', 'msg']
+        _slots__ = ['fsm_name', 'ctrl', 'event', 'state', 'finished', 'msg']
         fsm_name = "FSM"
         ctrl = None
-        event_index = 0
         event = None
         state = 0
         finished = False
@@ -172,7 +172,7 @@ class FSM(object):
         transition_counter = 0
         timeout = self.timeout
         self._dbg(10, "FSM Started")
-        while transition_counter < self.max_transitions + 1:
+        while transition_counter < self.max_transitions:
             transition_counter += 1
             try:
                 start_time = time()
@@ -190,7 +190,7 @@ class FSM(object):
                     transition = self.transition_table[key]
                     next_state, action_instance, next_timeout = transition
                     self._dbg(10, "E={},S={},T={},RT={:.2f}".format(ctx.event, ctx.state, timeout, finish_time))
-                    if callable(action_instance):
+                    if callable(action_instance) and not isclass(action_instance):
                         if not action_instance(ctx):
                             self._dbg(50, "Error: {}".format(ctx.msg))
                             return False
@@ -199,7 +199,7 @@ class FSM(object):
                     elif action_instance is None:
                         self._dbg(10, "No action")
                     else:
-                        self._dbg(40, "FSM Action is not callable: {}".format(action_instance.__name__))
+                        self._dbg(40, "FSM Action is not callable: {}".format(str(action_instance)))
                         raise RuntimeWarning("FSM Action is not callable")
 
                     if next_timeout != 0:  # no change if set to 0

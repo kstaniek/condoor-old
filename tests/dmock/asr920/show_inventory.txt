@@ -1,0 +1,36 @@
+NAME: "Chassis", DESCR: "ASR 903 Series Router Chassis"
+PID: ASR-903           , VID: V01, SN: FOX1717P569
+
+NAME: "IM subslot 0/0", DESCR: "1-port Ten Gigabit Ethernet XFP Interface Module"
+PID: A900-IMA1X        , VID: V00, SN: FOC154081AK
+
+NAME: "subslot 0/0 transceiver 0", DESCR: "OC192 + 10GBASE-L"
+PID: XFP-10GLR-OC192SR   , VID: D  , SN: ECL1311030B
+
+NAME: "IM subslot 0/1", DESCR: "1-port Ten Gigabit Ethernet XFP Interface Module"
+PID: A900-IMA1X        , VID: V00, SN: FOC1539869M
+
+NAME: "subslot 0/1 transceiver 0", DESCR: "OC192 + 10GBASE-L"
+PID: XFP-10GLR-OC192SR   , VID: 05 , SN: ONT112410BG
+
+NAME: "IM subslot 0/2", DESCR: "8-port Gigabit Ethernet Interface Module"
+PID: A900-IMA8T        , VID: V01, SN: FOC1716N3HF
+
+NAME: "IM subslot 0/4", DESCR: "16 port T1/E1 IM"
+PID: A900-IMA16D       , VID: V01, SN: FOC1711N5NA
+
+NAME: "IM subslot 0/5", DESCR: "8-port Gigabit Ethernet Interface Module"
+PID: A900-IMA8S        , VID: V01, SN: FOC1716N52G
+
+NAME: "module R0", DESCR: "ASR 900 Route Switch Processor 2, Base Scale, 128Gbps"
+PID: A900-RSP2A-128    , VID: V01, SN: FOC1912N9DX
+
+NAME: "module R1", DESCR: "ASR 900 Route Switch Processor 2, Base Scale, 128Gbps"
+PID: A900-RSP2A-128    , VID: V01, SN: FOC1912N9F1
+
+NAME: "Power Supply Module 0", DESCR: "ASR 900 550W DC Power Supply"
+PID: A900-PWR550-D     , VID: V01, SN: TSU17140738
+
+NAME: "Fan Tray", DESCR: "ASR 903 FAN Tray"
+PID: A903-FAN          , VID: V01, SN: FOC1716N9GB
+
