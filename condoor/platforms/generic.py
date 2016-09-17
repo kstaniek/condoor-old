@@ -398,7 +398,6 @@ class Connection(object):
                 raise ConnectionError("Unexpected session disconnect", host=self.hostname)
 
             except Exception as err:
-                raise
                 error_msg = str(err)
                 self._error("Exception: {}:{}".format(err.__class__, error_msg))
                 raise ConnectionError(message=error_msg, host=self.hostname)
