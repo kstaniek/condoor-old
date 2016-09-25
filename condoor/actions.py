@@ -67,6 +67,13 @@ def a_unable_to_connect(ctx):
 
 
 @action
+def a_disconnect(ctx):
+    ctx.msg = "Device is reloading"
+    ctx.ctrl.platform.disconnect()
+    return True
+
+
+@action
 def a_reload_na(ctx):
     ctx.msg = "Reload to the ROM monitor disallowed from a telnet line. " \
               "Set the configuration register boot bits to be non-zero."

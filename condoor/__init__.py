@@ -572,12 +572,12 @@ class Connection(object):
 
         begin = time.time()
         expired = 0.0
-        attempt = 0
+        attempt = 1
         self.logger.info("Trying to reconnect within {} seconds".format(max_timeout))
         while expired < max_timeout:
             self.logger.debug("Reconnecting. Attempt {}".format(attempt))
             try:
-                self._driver.reconnect(logfile=self._session_fd)
+                self.connect(logfile=self._session_fd)
                 break
             except ConnectionError:
                 expired = time.time() - begin

@@ -31,7 +31,7 @@ import re
 import pexpect
 
 import generic
-from condoor.actions import a_send, a_send_line, a_send_password
+from condoor.actions import a_send, a_send_line, a_send_password, a_disconnect
 from condoor.exceptions import ConnectionError, ConnectionAuthenticationError
 
 
@@ -85,10 +85,11 @@ class Connection(generic.Connection):
 
         transitions = [
             (SAVE_CONFIG, [0], 1, partial(a_send_line, response), 60),
-            (PROCEED, [0, 1], -1, partial(a_send, "\r"), 10),
+            (PROCEED, [0, 1], 2, partial(a_send, "\r"), 10),
             # if timeout try to send the reload command again
             (pexpect.TIMEOUT, [0], 0, partial(a_send_line, RELOAD_CMD), 10),
-            (pexpect.EOF, [0, 1], -1, None, 0)
+            (pexpect.TIMEOUT, [2], -1, a_disconnect, 0),
+            (pexpect.EOF, [0, 1, 2], -1, a_disconnect, 0)
         ]
         return self.run_fsm("IOS-RELOAD", RELOAD_CMD, events, transitions, timeout=10, max_transitions=5)
 
