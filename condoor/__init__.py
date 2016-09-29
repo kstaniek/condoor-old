@@ -36,7 +36,7 @@ import hashlib
 
 from hopinfo import make_hop_info_from_url
 from controllers.pexpect_ctrl import Controller
-from condoor.utils import delegate
+from condoor.utils import delegate, FilteredFileHandler, FilteredFile
 
 from pexpect import TIMEOUT
 from condoor.controllers.fsm import FSM, action
@@ -177,14 +177,6 @@ class Connection(object):
         self._info = {}
         self._is_console = False
 
-        # self._udi = {
-        #     "name": "",
-        #     "description": "",
-        #     "pid": "",
-        #     "vid": "",
-        #     "sn": ""
-        # }
-
         if log_level > 0:
             formatter = logging.Formatter('%(asctime)-15s %(levelname)8s: %(message)s')
             if log_dir:
@@ -195,7 +187,7 @@ class Connection(object):
                     except IOError:
                         log_dir = "./"
                 log_filename = os.path.join(log_dir, 'condoor.log')
-                handler = logging.FileHandler(log_filename)
+                handler = FilteredFileHandler(log_filename, pattern=re.compile("s?ftp://.*:(.*)@"))
 
             else:
                 handler = logging.StreamHandler()
@@ -214,8 +206,10 @@ class Connection(object):
 
         if log_dir is not None:
             try:
-                self._session_fd = open(os.path.join(log_dir, 'session.log'), mode="w")
+                self._session_fd = FilteredFile(os.path.join(log_dir, 'session.log'),
+                                                mode="w", pattern=re.compile("s?ftp://.*:(.*)@"))
             except IOError:
+                print("Dupa")
                 self._session_fd = None
 
         self.logger.info("Condoor version {}".format(__version__))
@@ -227,7 +221,8 @@ class Connection(object):
         if self._log_session:
             if logfile is None:
                 try:
-                    self._session_fd = open(os.path.join(self._log_dir, 'session.log'), mode="a+")
+                    self._session_fd = FilteredFile(os.path.join(self._log_dir, 'session.log'), mode="a+",
+                                                    pattern=re.compile("s?ftp://.*:(.*)@"))
                 except (IOError, AttributeError):
                     self._session_fd = None
             else:

@@ -26,6 +26,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
+import logging
 import socket
 import time
 import re
@@ -174,3 +175,42 @@ def parse_inventory(inventory_output=None):
     if match:
         udi['sn'] = match.group('sn')
     return udi
+
+
+class FilteredFile(object):
+    __slots__ = ['_file', '_pattern']
+
+    def __init__(self, filename, mode="r", pattern=None):
+        object.__setattr__(self, '_pattern', pattern)
+        object.__setattr__(self, '_file', open(filename, mode))
+
+    def __getattr__(self, name):
+        return getattr(self._file, name)
+
+    def __setattr__(self, name, value):
+        setattr(self._file, name, value)
+
+    def write(self, text):
+        if self._pattern:
+            # pattern already compiled no need to check
+            result = re.search(self._pattern, text)
+            if result:
+                for g in result.groups():
+                    if g:
+                        text = text.replace(g, "***")
+        self._file.write(text)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._file.close()
+
+    def __enter__(self):
+        return self
+
+
+class FilteredFileHandler(logging.FileHandler):
+    def __init__(self, filename, mode='a', encoding=None, delay=0, pattern=None):
+        self.pattern = pattern
+        logging.FileHandler.__init__(self, filename, mode=mode, encoding=encoding, delay=delay)
+
+    def _open(self):
+        return FilteredFile(self.baseFilename, self.mode, self.pattern)

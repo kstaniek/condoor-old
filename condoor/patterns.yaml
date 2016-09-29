@@ -5,6 +5,8 @@ generic:
   prompt_dynamic: '{prompt}[#>]'
   username: '[U|u]sername:\s|login:\s?'
   password: '[P|p]assword:\s?'
+  passowrd_filter: '[s]ftp://.*:(.*)@")'
+
   rommon:
     - XR
     - XR64
