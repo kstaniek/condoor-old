@@ -1,6 +1,7 @@
 ---
 generic:
-  prompt: '(?P<hostname>[\w\-]+)[#>]'
+  #prompt: '(?P<hostname>[\w\-]+)[#>]'
+  prompt: '(?P<hostname>.*)[#>]'
   prompt_dynamic: '{prompt}[#>]'
   username: '[U|u]sername:\s|login:\s?'
   password: '[P|p]assword:\s?'
@@ -20,6 +21,7 @@ generic:
     - IOS
     - NX-OS
     - jumphost
+    - Calvados
 
   press_return: 'Press RETURN to get started\.'
   more: ' --More-- '
@@ -105,3 +107,12 @@ NX-OS:
   rommon: 'loader >'
   standby: '\(standby\)'
   syntax_error: '% Invalid command at ''\^'' marker\.|% Incomplete command at ''\^'' marker\.'
+
+Calvados:
+  prompt: '^sysadmin-vm:[0-3]_RS?P[0-1]:?(?P<hostname>.*?)(\([^()]*\))?#'
+  prompt_dynamic: '{prompt}(\([^()]*\))?#'
+  prompt_default: 'sysadmin-vm:[0-3]_RS?P[0-1]#'
+  password: 'Password: '
+  username: 'System Admin Username: '
+  syntax_error: 'syntax error: expecting'
+

@@ -419,7 +419,8 @@ class Connection(object):
             self.hostname = result.group('hostname')
             self._debug("Hostname detected: {}".format(self.hostname))
         else:
-            self._debug("Hostname not known: {}".format(prompt))
+            self.hostname = 'host'
+            self._debug("Hostname not set: {}".format(prompt))
 
     def wait_for_prompt(self, timeout=60):
         #                    0                         1                        2                        3

@@ -71,7 +71,7 @@ os_names = {
     'eXR': 'IOS XR 64 bit',
     'XE': 'IOS XE',
     'NX-OS': 'NX-OS',
-
+    'Calvados': 'IOS XR Admin'
 }
 
 
@@ -246,6 +246,8 @@ class Connection(object):
             driver_name = 'IOS'
         elif self._os_type in ['NX-OS']:
             driver_name = 'NX-OS'
+        elif self._os_type in ["Calvados"]:
+            driver_name = "Calvados"
 
         return driver_name
 
@@ -322,6 +324,9 @@ class Connection(object):
             match = re.search("Build Information", show_version)
             if match:
                 self._os_type = "eXR"
+            match = re.search("XR Admin Software", show_version)
+            if match:
+                self._os_type = "Calvados"
 
         match = re.search("^(  )?cisco (.*?) ", show_version, re.MULTILINE)  # NX-OS
         if match:
@@ -425,7 +430,7 @@ class Connection(object):
 
         # New driver initialized so need to copy detected prompts from controller
         self._driver.detected_prompts = self._driver.ctrl.detected_prompts
-        self._hostname = self._driver.hostname
+        # self._hostname = self._driver.hostname
 
         self._driver._compile_prompts()
         self._driver.collect_udi()
