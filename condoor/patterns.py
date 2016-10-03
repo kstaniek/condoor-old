@@ -138,8 +138,17 @@ class PatternManager(object):
 class YPatternManager(PatternManager):
     def __init__(self, config_file_path=None):
         if config_file_path is None:
-            scriptname = os.path.splitext(os.path.abspath(__file__))[0]
-            config_file_path = os.getenv(scriptname.upper() + 'CFG', scriptname + '.yaml')
+            scriptname = os.path.splitext(__file__)[0]
+            # try user config path first
+            config_file_path = os.path.join(os.path.expanduser("~"), ".condoor", scriptname + '.yaml')
+            if not os.path.exists(config_file_path):
+                # try module config path (assuming it always exists)
+                config_file_path = os.path.splitext(os.path.abspath(__file__))[0] + '.yaml'
+
+                config_file_path = os.getenv(scriptname.upper() + '_CFG', config_file_path)
+
+        if not os.path.exists(config_file_path):
+            raise RuntimeError("Pattern Config file does not exits: {}".format(config_file_path))
 
         pattern_dict = self._read_config(config_file_path)
         super(YPatternManager, self).__init__(pattern_dict=pattern_dict)
@@ -152,6 +161,7 @@ class YPatternManager(PatternManager):
         return config
 
 # ypm = YPatternManager()
+
 # print(ypm.get_pattern("generic", "syntax_error", compiled=False))
 # print(ypm.get_pattern("generic", "syntax_error").pattern)
 
