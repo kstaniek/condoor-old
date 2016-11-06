@@ -47,12 +47,23 @@ class Connection(generic.Connection):
         super(Connection, self).__init__(
             name, hosts, controller_class, logger, is_console=is_console, account_manager=account_manager)
 
-        self.calvados_re = self.pattern_manager.get_pattern(self.platform, 'calvados')
+        self.calvados_re = self.pattern_manager.get_pattern('Calvados', 'prompt')
 
     def prepare_terminal_session(self):
         self.send('terminal exec prompt no-timestamp')
         self.send('terminal len 0')
         self.send('terminal width 0')
+
+    def determine_hostname(self, prompt):
+        # self.prompt is a re pattern
+        result = re.search(self.prompt_re, prompt) or re.search(self.calvados_re, prompt)
+        if result:
+
+            self.hostname = result.group('hostname')
+            self._debug("Hostname detected - blablabla: {}".format(self.hostname))
+        else:
+            self.hostname = 'not-set'
+            self._debug("Hostname not set: {}".format(prompt))
 
     def boot(self):
         pass

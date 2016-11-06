@@ -39,12 +39,12 @@ from condoor.exceptions import ConnectionError, ConnectionTimeoutError
 @delegate("_session", ("expect", "expect_exact", "sendline",
                        "isalive", "sendcontrol", "send", "read_nonblocking", "setecho"))
 class Controller(object):
-    def __init__(self, platform, hosts, account_manager=None, max_attempts=1, logfile=None):
+    def __init__(self, hosts, account_manager=None, max_attempts=1, logfile=None):
         self.hosts = to_list(hosts)
         self.max_attempts = max_attempts
         self.account_mgr = account_manager
         self.session_log = logfile
-        self.platform = platform
+        self.platform = None
         self.connected = False
         self.authenticated = False
         self._session = None
@@ -85,6 +85,9 @@ class Controller(object):
         target_hop = len(self.hosts)
         self._dbg(10, "[{}] {}: Updated target prompt: {}".format(target_hop, self.hosts[-1].hostname, prompt))
         self.detected_prompts[-1] = prompt
+
+    def update_driver(self, driver):
+        self.platform = driver
 
     def connect(self, start_hop=0, spawn=True, detect_prompt=True):
         # it can restart from the last hop.

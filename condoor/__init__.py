@@ -37,11 +37,12 @@ import hashlib
 from hopinfo import make_hop_info_from_url
 from controllers.pexpect_ctrl import Controller
 from condoor.utils import delegate, FilteredFileHandler, FilteredFile
+from condoor.patterns import YPatternManager
 
 from pexpect import TIMEOUT
 from condoor.controllers.fsm import FSM, action
 
-from condoor.exceptions import CommandTimeoutError, ConnectionError, ConnectionTimeoutError, CommandError, \
+from condoor.exceptions import ConnectionError, ConnectionTimeoutError, CommandError, \
     CommandSyntaxError, ConnectionAuthenticationError, GeneralError
 
 __version__ = '1.0.0'
@@ -51,7 +52,7 @@ This is a python module providing access to Cisco devices over Telnet and SSH.
 
 """
 
-__all__ = ['Connection', 'FSM', 'TIMEOUT', 'action',
+__all__ = ['Connection', 'FSM', 'TIMEOUT', 'action', 'pattern_manager'
            'CommandTimeoutError', 'ConnectionError', 'ConnectionTimeoutError', 'CommandError',
            'CommandSyntaxError', 'ConnectionAuthenticationError']
 
@@ -73,6 +74,10 @@ os_names = {
     'NX-OS': 'NX-OS',
     'Calvados': 'IOS XR Admin'
 }
+
+""" This is a global pattern manager to provide RegExp patterns for various platform and usecases.
+It can be used in plugins if common platform specific pattern is needed"""
+pattern_manager = YPatternManager()
 
 
 @delegate("_driver", ("reload", "send", "enable", "run_fsm", "send_xml"))
@@ -209,7 +214,6 @@ class Connection(object):
                 self._session_fd = FilteredFile(os.path.join(log_dir, 'session.log'),
                                                 mode="w", pattern=re.compile("s?ftp://.*:(.*)@"))
             except IOError:
-                print("Dupa")
                 self._session_fd = None
 
         self.logger.info("Condoor version {}".format(__version__))
@@ -301,7 +305,7 @@ class Connection(object):
             # IOS Hack - need to check if show version brief is supported on IOS/IOSXE
             show_version = self._driver.send("show version", timeout=120)
 
-        match = re.search("Version (.*?)(?:\[| |$)", show_version, re.MULTILINE)
+        match = re.search("Version (.*?),?(?:\[| |$)", show_version, re.MULTILINE)
         if match:
             self._os_version = match.group(1)
 
@@ -323,14 +327,18 @@ class Connection(object):
             if match:
                 self._os_type = "Calvados"
 
-        match = re.search("^(  )?cisco (.*?) ", show_version, re.MULTILINE)  # NX-OS
+        self._family = 'generic'
+        match = re.search("^(?:  )?cisco (.*?) ", show_version, re.MULTILINE)  # NX-OS
         if match:
             self.logger.debug("Platform string: {}".format(match.group()))
-            self._platform = match.group(2)
-            _family = match.group(2)
-        else:
-            self._family = 'generic'
-            return
+            self._platform = match.group(1)
+            _family = match.group(1)
+
+        match = re.search("^[Cc]isco (.*?)(?: .*) processor", show_version, re.MULTILINE)
+        if match:
+            self.logger.debug("Platform string: {}".format(match.group()))
+            self._platform = match.group(1)
+            _family = match.group(1)
 
         if _family.startswith("ASR9K"):
             _family = "ASR9K"
@@ -346,14 +354,14 @@ class Connection(object):
             _family = "CRS"
         elif _family.startswith("ASR-9") and self._os_type == "XE":
             _family = "ASR900"
+        elif _family.startswith("A9") and self._os_type == "IOS":
+            _family = "ASR900"
         elif _family.startswith("Nexus9000") and self._os_type == "NX-OS":
             _family = "N9K"
         elif _family.startswith("NCS1") or _family.startswith("NCS-1"):
             _family = "NCS1K"
 
         self._family = _family
-
-    # _udi
 
     def discovery(self, logfile=None):
         """This method detects the device details. This method discovery the several device attributes.
@@ -604,8 +612,7 @@ class Connection(object):
     @property
     def platform(self):
         """Returns the string representing hardware platform model. For example: ASR-9010, ASR922, NCS-4006, etc."""
-        __pid = self._driver.udi['pid']
-        match = re.search(r"([A-Z]{3}[-| ]?[0-9]{3,4})", __pid)
+        match = re.search(r"([A-Z]{1,3}[-| ]?[0-9]{3,4})", self._driver.udi['pid'])
         if match:
             return match.group(1)
         else:

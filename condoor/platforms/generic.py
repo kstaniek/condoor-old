@@ -100,8 +100,9 @@ class Connection(object):
         """
 
         if not self.connected:
-            self.ctrl = self.ctrl_class(self, self.hosts, self.account_manager, logfile=logfile)
+            self.ctrl = self.ctrl_class(self.hosts, self.account_manager, logfile=logfile)
             self.ctrl.logger = self.logger
+            self.ctrl.platform = self
             self._info("Connecting to {} using {} driver".format(self.__repr__(), self.platform))
             self._compile_prompts()
             self.connected = self.ctrl.connect()
@@ -417,9 +418,10 @@ class Connection(object):
         result = re.search(self.prompt_re, prompt)
         if result:
             self.hostname = result.group('hostname')
-            self._debug("Hostname detected: {}".format(self.hostname))
+            self._debug("platform: {}".format(self.platform))
+            self._debug("Hostname detected - generic: {}".format(self.hostname))
         else:
-            self.hostname = 'host'
+            self.hostname = 'not-set'
             self._debug("Hostname not set: {}".format(prompt))
 
     def wait_for_prompt(self, timeout=60):

@@ -368,6 +368,11 @@ class ASR903Handler(IOSXEHandler):
     authNeedUser = False
     PROMPT = "PAN-5205-ASR903>"
 
+class ASR901Handler(IOSXEHandler):
+    platform = "ASR901"
+    authNeedUser = False
+    PROMPT = "CSG-1202-ASR901>"
+
 
 if __name__ == '__main__':
 
