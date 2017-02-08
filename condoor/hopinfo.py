@@ -27,7 +27,7 @@
 # =============================================================================
 
 from urlparse import urlparse
-import re
+from urllib import unquote
 
 from exceptions import InvalidHopInfoError
 
@@ -65,21 +65,17 @@ def make_hop_info_from_url(url, verify_reachability=None):
         HopInfo object or None if url is invalid or protocol not supported
 
     """
-
     parsed = urlparse(url)
-    try:
-        # search for anything which is after the netloc/
-        enable_password = re.search(re.compile(parsed.netloc + "/(.*)"), url).group(1)
-    except AttributeError:  # not found
-        enable_password = None
+    username = None if parsed.username is None else unquote(parsed.username)  # It's None if not exists
+    password = None if parsed.password is None else unquote(parsed.password)  # It's None if not exists
 
     hop_info = HopInfo(
         parsed.scheme,
         parsed.hostname,
-        parsed.username,
-        parsed.password,
+        username,
+        password,
         parsed.port,
-        enable_password,
+        unquote(parsed.path[1:]),  # first char is '/'. It's empty if not exists in url
         verify_reachability=verify_reachability
     )
     if hop_info.is_valid():
